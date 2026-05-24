@@ -1,0 +1,35 @@
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+credentials.json
+service_account.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Terraform
+terraform/envs/**/.terraform/
+terraform/envs/**/*.tfstate
+terraform/envs/**/*.tfstate.backup
+terraform/envs/**/*.tfvars
+terraform/envs/**/.terraform.lock.hcl
+
+# Local Claude memory/SDD (não vai pro repo)
+.claude/
+
+# IDEs
+.idea/
+.vscode/
+*.swp

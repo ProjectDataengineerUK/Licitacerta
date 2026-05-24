@@ -1,0 +1,21 @@
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+RUN pip install poetry==1.8.3
+COPY pyproject.toml poetry.lock* ./
+RUN poetry export --extras gcp -f requirements.txt --without-hashes -o requirements.txt
+
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY --from=builder /app/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ src/
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# WORKER_MODULE is set by Cloud Run Job env var:
+#   src.workers.document_worker | src.workers.agents_worker | etc.
+CMD ["sh", "-c", "python -m ${WORKER_MODULE}"]
