@@ -83,7 +83,7 @@ def decision_graph_with_mocks():
     ):
         from src.graph.subgraphs.decision import build_decision_subgraph
         graph = build_decision_subgraph()
-    return graph, mock_pricing, mock_bid
+        yield graph, mock_pricing, mock_bid
 
 
 def test_decision_happy_path(decision_graph_with_mocks):

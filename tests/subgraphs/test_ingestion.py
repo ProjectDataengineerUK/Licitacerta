@@ -23,7 +23,7 @@ def ingestion_graph_with_mock():
         from src.graph.subgraphs.ingestion import build_ingestion_subgraph
 
         graph = build_ingestion_subgraph()
-    return graph, mock_agent
+        yield graph, mock_agent
 
 
 def test_ingestion_happy_path(ingestion_graph_with_mock):

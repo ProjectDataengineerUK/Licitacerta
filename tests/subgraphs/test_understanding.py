@@ -52,7 +52,7 @@ def understanding_graph_with_mocks():
     ):
         from src.graph.subgraphs.understanding import build_understanding_subgraph
         graph = build_understanding_subgraph()
-    return graph, mock_tu, mock_lr
+        yield graph, mock_tu, mock_lr
 
 
 def test_understanding_happy_path(understanding_graph_with_mocks):

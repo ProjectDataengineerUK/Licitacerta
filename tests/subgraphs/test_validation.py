@@ -68,7 +68,7 @@ def validation_graph_with_mocks():
     ):
         from src.graph.subgraphs.validation import build_validation_subgraph
         graph = build_validation_subgraph(blacklist_fn=mock_blacklist_fn)
-    return graph, mock_elig, mock_comp, mock_blacklist_fn
+        yield graph, mock_elig, mock_comp, mock_blacklist_fn
 
 
 def _base_state():

@@ -68,7 +68,7 @@ def execution_graph_with_mock():
     with patch("src.graph.subgraphs.execution.ProposalAgent", return_value=mock_proposal):
         from src.graph.subgraphs.execution import build_execution_subgraph
         graph = build_execution_subgraph()
-    return graph, mock_proposal
+        yield graph, mock_proposal
 
 
 def test_execution_happy_path(execution_graph_with_mock):

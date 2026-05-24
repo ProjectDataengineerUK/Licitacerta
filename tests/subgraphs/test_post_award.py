@@ -68,7 +68,7 @@ def post_award_graph_with_mock():
     with patch("src.graph.subgraphs.post_award.ContractAgent", return_value=mock_contract):
         from src.graph.subgraphs.post_award import build_post_award_subgraph
         graph = build_post_award_subgraph()
-    return graph, mock_contract
+        yield graph, mock_contract
 
 
 def test_post_award_happy_path(post_award_graph_with_mock):
