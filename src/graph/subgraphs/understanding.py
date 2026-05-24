@@ -112,8 +112,8 @@ def build_understanding_subgraph():
 
     g: StateGraph = StateGraph(TenderState)
     g.add_node("tender_understanding", run_tender_understanding)
-    g.add_node("legal_regime", run_legal_regime)
+    g.add_node("regime_detect", run_legal_regime)
     g.set_entry_point("tender_understanding")
-    g.add_edge("tender_understanding", "legal_regime")
-    g.set_finish_point("legal_regime")
+    g.add_edge("tender_understanding", "regime_detect")
+    g.set_finish_point("regime_detect")
     return g.compile()

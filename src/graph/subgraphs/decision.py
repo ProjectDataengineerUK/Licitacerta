@@ -109,9 +109,9 @@ def build_decision_subgraph():
             }
 
     g: StateGraph = StateGraph(TenderState)
-    g.add_node("pricing", run_pricing)
+    g.add_node("price_calc", run_pricing)
     g.add_node("bid_no_bid", run_bid_no_bid)
-    g.set_entry_point("pricing")
-    g.add_edge("pricing", "bid_no_bid")
+    g.set_entry_point("price_calc")
+    g.add_edge("price_calc", "bid_no_bid")
     g.set_finish_point("bid_no_bid")
     return g.compile()

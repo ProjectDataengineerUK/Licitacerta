@@ -145,12 +145,12 @@ def build_validation_subgraph(blacklist_fn=None):
             }
 
     g: StateGraph = StateGraph(TenderState)
-    g.add_node("eligibility", run_eligibility)
-    g.add_node("compliance", run_compliance)
-    g.add_node("blacklist", run_blacklist)
+    g.add_node("check_eligibility", run_eligibility)
+    g.add_node("check_compliance", run_compliance)
+    g.add_node("check_blacklist", run_blacklist)
 
-    g.set_entry_point("eligibility")
-    g.add_edge("eligibility", "compliance")
-    g.add_edge("compliance", "blacklist")
-    g.set_finish_point("blacklist")
+    g.set_entry_point("check_eligibility")
+    g.add_edge("check_eligibility", "check_compliance")
+    g.add_edge("check_compliance", "check_blacklist")
+    g.set_finish_point("check_blacklist")
     return g.compile()
