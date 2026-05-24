@@ -3,15 +3,30 @@ variable "region" { type = string }
 variable "service_name" { type = string }
 variable "image" { type = string }
 variable "service_account_email" { type = string }
-variable "env_vars" { type = map(string) default = {} }
+variable "env_vars" {
+  type    = map(string)
+  default = {}
+}
 variable "secrets" {
   type = list(object({ name = string, secret = string, version = string }))
   default = []
 }
-variable "min_instances" { type = number default = 0 }
-variable "max_instances" { type = number default = 10 }
-variable "memory" { type = string default = "512Mi" }
-variable "cpu" { type = string default = "1" }
+variable "min_instances" {
+  type    = number
+  default = 0
+}
+variable "max_instances" {
+  type    = number
+  default = 10
+}
+variable "memory" {
+  type    = string
+  default = "512Mi"
+}
+variable "cpu" {
+  type    = string
+  default = "1"
+}
 
 resource "google_cloud_run_v2_service" "svc" {
   project  = var.project_id

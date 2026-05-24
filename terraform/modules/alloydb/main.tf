@@ -2,35 +2,45 @@ variable "project_id" { type = string }
 variable "region" { type = string }
 variable "cluster_id" { type = string }
 variable "instance_id" { type = string }
-variable "db_name" { type = string default = "licitacerta" }
-variable "cpu_count" { type = number default = 2 }
+variable "network_id" { type = string }
+variable "db_name" {
+  type    = string
+  default = "licitacerta"
+}
+variable "cpu_count" {
+  type    = number
+  default = 2
+}
 
 resource "google_alloydb_cluster" "main" {
   project    = var.project_id
   location   = var.region
   cluster_id = var.cluster_id
 
+  network_config {
+    network = var.network_id
+  }
+
   initial_user {
-    password = ""  # IAM auth only — no password
+    password = ""
   }
 
   automated_backup_policy {
     enabled = true
     weekly_schedule {
       days_of_week = ["SUNDAY"]
-      start_times { hours = 3 minutes = 0 seconds = 0 nanos = 0 }
+      start_times {
+        hours   = 3
+        minutes = 0
+        seconds = 0
+        nanos   = 0
+      }
     }
     quantity_based_retention {
       count = 7
     }
   }
-
-  encryption_config {
-    kms_key_name = var.kms_key_name
-  }
 }
-
-variable "kms_key_name" { type = string default = "" }
 
 resource "google_alloydb_instance" "primary" {
   cluster       = google_alloydb_cluster.main.name
