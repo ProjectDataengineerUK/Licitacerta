@@ -92,6 +92,8 @@ async def approve_run(
     await store.wait(run_id)
 
     entry = await store.get(run_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="run not found")
     return store.to_status(entry)
 
 
@@ -136,6 +138,8 @@ async def reject_run(
     await store.wait(run_id)
 
     entry = await store.get(run_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail="run not found")
     return store.to_status(entry)
 
 

@@ -28,12 +28,12 @@ def _build_llm(tier: ModelTier) -> Any:
     if tier == ModelTier.LEGAL:
         from langchain_anthropic import ChatAnthropic
         from pydantic import SecretStr
-        return ChatAnthropic(model=settings.model_sonnet, api_key=SecretStr(settings.anthropic_api_key))
+        return ChatAnthropic(model_name=settings.model_sonnet, api_key=SecretStr(settings.anthropic_api_key))
 
     if tier == ModelTier.GENERATE_PREMIUM:
         from langchain_anthropic import ChatAnthropic
         from pydantic import SecretStr
-        return ChatAnthropic(model=settings.model_opus, api_key=SecretStr(settings.anthropic_api_key))
+        return ChatAnthropic(model_name=settings.model_opus, api_key=SecretStr(settings.anthropic_api_key))
 
     from src.gcp.vertex_ai import VertexAILLM
 
