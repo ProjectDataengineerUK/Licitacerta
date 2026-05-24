@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 from datetime import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 
-from src.tools.blacklist import CGU_BASE, check_blacklist
+from src.tools.blacklist import check_blacklist
 
 _CNPJ = "12345678000195"
 _ENDPOINTS = ("ceis", "cnep", "cepim")
