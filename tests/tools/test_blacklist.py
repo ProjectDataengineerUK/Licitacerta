@@ -10,10 +10,7 @@ _CNPJ = "12345678000195"
 
 
 def _mock_endpoint(endpoint: str, **kwargs):
-    return respx.get(
-        f"{CGU_BASE}/{endpoint}",
-        params={"cnpjSancionado": _CNPJ, "pagina": "1"},
-    ).mock(**kwargs)
+    return respx.get(f"{CGU_BASE}/{endpoint}?cnpjSancionado={_CNPJ}&pagina=1").mock(**kwargs)
 
 
 @respx.mock
