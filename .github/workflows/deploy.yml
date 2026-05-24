@@ -1,12 +1,10 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
-    paths-ignore:
-      - "terraform/**"
-      - "*.md"
-      - "context.md"
+    types: [completed]
 
 permissions:
   contents: read
@@ -14,12 +12,15 @@ permissions:
 
 jobs:
   build-push:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
@@ -32,7 +33,7 @@ jobs:
 
       - name: Set image tag
         id: meta
-        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        run: echo "tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push API image
         run: |
