@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 
 import httpx
@@ -7,10 +6,14 @@ import respx
 
 from src.tools.blacklist import CGU_BASE, check_blacklist
 
+_CNPJ = "12345678000195"
+
 
 def _mock_endpoint(endpoint: str, **kwargs):
-    """Register a respx route matching the endpoint regardless of query params."""
-    return respx.get(re.compile(rf"{re.escape(CGU_BASE)}/{endpoint}")).mock(**kwargs)
+    return respx.get(
+        f"{CGU_BASE}/{endpoint}",
+        params={"cnpjSancionado": _CNPJ, "pagina": "1"},
+    ).mock(**kwargs)
 
 
 @respx.mock
