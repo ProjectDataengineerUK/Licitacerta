@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any
 
 
 def record_metric(name: str, value: float, labels: dict[str, str] | None = None) -> None:

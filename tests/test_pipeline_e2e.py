@@ -6,8 +6,6 @@ AT-005: Contexto mínimo por agente (supervisor não passa estado inteiro).
 from datetime import datetime
 from decimal import Decimal
 
-import pytest
-
 from src.graph.state import initial_state
 from src.schemas.results import (
     AgentError,
@@ -20,7 +18,6 @@ from src.schemas.results import (
     ProposalDraft,
 )
 from src.schemas.tender import Evidence, PageContent, TenderSchema
-
 
 # ---------------------------------------------------------------------------
 # Subgrafos stub — simulam execução real sem LLM
@@ -81,7 +78,11 @@ def _decision_stub(state: dict) -> dict:
             conclusion="Margem adequada", confidence=0.85,
             cost_estimate=Decimal("40000.00"), min_margin_pct=15.0,
             recommended_price=Decimal("47058.82"),
-            scenarios={"pessimista": Decimal("44444.00"), "realista": Decimal("47058.82"), "otimista": Decimal("53333.00")},
+            scenarios={
+                "pessimista": Decimal("44444.00"),
+                "realista": Decimal("47058.82"),
+                "otimista": Decimal("53333.00"),
+            },
             recommended_action="Participar",
         ),
         "bid_decision": BidDecision(
@@ -119,6 +120,7 @@ def test_at001_pipeline_completo():
     """AT-001: Pipeline end-to-end com stubs — bid_decision preenchido ao final."""
     from langgraph.checkpoint.memory import MemorySaver
     from langgraph.types import Command
+
     from src.graph.supervisor import build_supervisor
 
     graph = build_supervisor(
@@ -141,8 +143,6 @@ def test_at001_pipeline_completo():
     assert result["bid_decision"].recommendation == "participar"
 
     # Resume com aprovação humana
-    from src.schemas.results import HumanApproval
-    from datetime import datetime
 
     resume_payload = {"decision": "approved", "approver": "jonatas", "comment": "ok"}
     final = graph.invoke(Command(resume=resume_payload), config=config)
@@ -180,7 +180,7 @@ def _validation_with_compliance_error(state: dict) -> dict:
 def test_at002_falha_isolada_nao_derruba_pipeline():
     """AT-002: Erro em compliance é capturado em errors[] — pipeline continua."""
     from langgraph.checkpoint.memory import MemorySaver
-    from langgraph.types import Command
+
     from src.graph.supervisor import build_supervisor
 
     graph = build_supervisor(
@@ -216,8 +216,8 @@ def test_at005_supervisor_routing_nao_vaza_estado():
     O supervisor injeta o subgrafo recebido diretamente — o estado filtrado
     é responsabilidade de cada subgrafo ao usar apenas os campos que precisa.
     """
-    from src.graph.supervisor import ROUTING, _route
     from src.graph.state import initial_state
+    from src.graph.supervisor import _route
 
     steps_with_next = [
         ("start", "subgraph_ingestion"),

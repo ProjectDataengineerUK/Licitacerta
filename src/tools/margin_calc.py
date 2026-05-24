@@ -1,5 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
-
+from decimal import ROUND_HALF_UP, Decimal
 
 CENT = Decimal("0.01")
 
@@ -66,7 +65,13 @@ def build_scenarios(
 ) -> dict[str, dict[str, Decimal]]:
     """Gera os três cenários de precificação (pessimista/realista/otimista)."""
     return {
-        "pessimista": calculate_margin(cost, target_margin_pct=10.0, tax_rate_pct=tax_rate_pct, payment_delay_days=payment_delay_days + 30),
-        "realista": calculate_margin(cost, target_margin_pct=18.0, tax_rate_pct=tax_rate_pct, payment_delay_days=payment_delay_days),
-        "otimista": calculate_margin(cost, target_margin_pct=25.0, tax_rate_pct=tax_rate_pct, payment_delay_days=max(0, payment_delay_days - 15)),
+        "pessimista": calculate_margin(
+            cost, target_margin_pct=10.0, tax_rate_pct=tax_rate_pct, payment_delay_days=payment_delay_days + 30
+        ),
+        "realista": calculate_margin(
+            cost, target_margin_pct=18.0, tax_rate_pct=tax_rate_pct, payment_delay_days=payment_delay_days
+        ),
+        "otimista": calculate_margin(
+            cost, target_margin_pct=25.0, tax_rate_pct=tax_rate_pct, payment_delay_days=max(0, payment_delay_days - 15)
+        ),
     }

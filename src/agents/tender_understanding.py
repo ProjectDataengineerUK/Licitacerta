@@ -25,11 +25,15 @@ extraia as informações estruturadas do edital no schema fornecido.
 
 - `objeto`: descrição concisa e específica do que está sendo licitado (máx 200 chars)
 - `orgao`: nome completo do órgão licitante conforme consta no edital
-- `modalidade`: um de [pregao_eletronico, pregao_presencial, concorrencia, tomada_precos, convite, dispensa, inexigibilidade, leilao, dialogo_competitivo]
+- `modalidade`: um de [pregao_eletronico, pregao_presencial, concorrencia, tomada_precos, convite,
+  dispensa, inexigibilidade, leilao, dialogo_competitivo]
 - `valor_estimado`: em reais, sem formatação (ex: 150000.00); null se não informado explicitamente
-- `criterio_julgamento`: um de [menor_preco, maior_desconto, melhor_tecnica, tecnica_e_preco, maior_lance, menor_taxa]
-- `documentos_exigidos`: liste TODOS os documentos de habilitação exigidos (habilitação jurídica, técnica, fiscal, econômica)
-- `exigencias_tecnicas`: qualificações técnicas além de documentos padrão (atestados específicos, registros profissionais, equipe técnica)
+- `criterio_julgamento`: um de [menor_preco, maior_desconto, melhor_tecnica, tecnica_e_preco,
+  maior_lance, menor_taxa]
+- `documentos_exigidos`: liste TODOS os documentos de habilitação exigidos
+  (habilitação jurídica, técnica, fiscal, econômica)
+- `exigencias_tecnicas`: qualificações técnicas além de documentos padrão
+  (atestados específicos, registros profissionais, equipe técnica)
 - `penalidades`: multas, sanções e penalidades previstas no instrumento convocatório
 - `garantia_exigida`: true se exigida garantia de proposta ou de execução
 - `garantia_percentual`: percentual de garantia se informado; null caso contrário

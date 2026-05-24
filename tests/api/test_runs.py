@@ -1,7 +1,6 @@
 """AT-002: Status após ingestão. AT-006: 404 para run_id inexistente."""
 import asyncio
 
-import pytest
 from httpx import AsyncClient
 
 

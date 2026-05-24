@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Any
+from typing import Any, AsyncGenerator
 
 
 def create_alloydb_engine(instance_uri: str, db: str) -> Any:

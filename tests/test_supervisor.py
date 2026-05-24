@@ -1,9 +1,7 @@
-from unittest.mock import MagicMock
 
-import pytest
 
+from src.graph.state import TenderState, initial_state
 from src.graph.supervisor import ROUTING, _route
-from src.graph.state import initial_state, TenderState
 
 
 def _state_with_step(step: str) -> TenderState:

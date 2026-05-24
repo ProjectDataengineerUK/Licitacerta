@@ -1,5 +1,4 @@
 """AT-001: Submit edital — 202 + run_id. AT-007: Payload inválido — 422."""
-import pytest
 from httpx import AsyncClient
 
 

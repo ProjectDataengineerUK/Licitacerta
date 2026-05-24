@@ -29,9 +29,9 @@ def setup_otel(service_name: str = "licitacerta-api") -> None:
         return
     try:
         from opentelemetry import trace
+        from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
-        from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
 
         provider = TracerProvider()
         provider.add_span_processor(BatchSpanProcessor(CloudTraceSpanExporter()))

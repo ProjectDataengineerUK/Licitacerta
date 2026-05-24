@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import httpx
 import pytest
 import respx
 
-from src.tools.blacklist import check_blacklist, CGU_BASE
+from src.tools.blacklist import CGU_BASE, check_blacklist
 
 
 @respx.mock

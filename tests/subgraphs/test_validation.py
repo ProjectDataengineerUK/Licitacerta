@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,7 +10,7 @@ from src.schemas.results import (
     EligibilityResult,
     LegalRegimeResult,
 )
-from src.schemas.tender import Evidence, TenderSchema
+from src.schemas.tender import TenderSchema
 
 
 def _make_tender_schema() -> TenderSchema:
@@ -129,7 +128,7 @@ def test_validation_audit_log_has_deterministic_blacklist(validation_graph_with_
 def test_validation_context_minimum(validation_graph_with_mocks):
     """Verifica que eligibility recebe apenas tender_schema + company_cnpj (ADR-002)."""
     graph, mock_elig, _, _ = validation_graph_with_mocks
-    result = graph.invoke(_base_state())
+    graph.invoke(_base_state())
 
     call_context = mock_elig.run.call_args[0][0]
     assert "tender_schema" in call_context

@@ -4,11 +4,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.agents.contract import ContractObligation, ContractResult
 from src.config import settings
 from src.graph.state import initial_state
 from src.schemas.results import ProposalDraft
 from src.schemas.tender import TenderSchema
-from src.agents.contract import ContractObligation, ContractResult
 
 
 def _make_contract_result() -> ContractResult:

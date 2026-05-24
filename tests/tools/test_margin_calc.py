@@ -1,7 +1,5 @@
 from decimal import Decimal
 
-import pytest
-
 from src.tools.margin_calc import build_scenarios, calculate_margin, mora_juros
 
 

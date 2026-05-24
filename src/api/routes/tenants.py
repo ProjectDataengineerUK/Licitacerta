@@ -25,8 +25,9 @@ class TenantCreate(BaseModel):
 async def create_tenant(body: TenantCreate) -> JSONResponse:
     tenant_id = str(uuid.uuid4())
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)
@@ -49,8 +50,9 @@ async def create_tenant(body: TenantCreate) -> JSONResponse:
 @router.get("/{tenant_id}")
 async def get_tenant(tenant_id: str) -> JSONResponse:
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)

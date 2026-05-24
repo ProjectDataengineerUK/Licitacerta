@@ -14,6 +14,7 @@ from src.api.watch_store import WatchStore as _WatchStore
 
 
 def _make_stub_graph():
+    from src.graph.supervisor import build_supervisor
     from tests.test_pipeline_e2e import (
         _decision_stub,
         _execution_stub,
@@ -22,7 +23,6 @@ def _make_stub_graph():
         _understanding_stub,
         _validation_stub,
     )
-    from src.graph.supervisor import build_supervisor
 
     return build_supervisor(
         ingestion_graph=_ingestion_stub,

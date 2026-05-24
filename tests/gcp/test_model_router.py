@@ -3,9 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from src.agents.model_router import AGENT_TIERS, ModelTier, get_llm
+from src.agents.model_router import AGENT_TIERS, ModelTier
 
 
 def test_all_12_agents_have_tiers():

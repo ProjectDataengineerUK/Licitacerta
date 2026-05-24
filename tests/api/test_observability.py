@@ -5,11 +5,9 @@ import asyncio
 import json
 
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
-from src.api.store import RunStore, _SSE_CLOSE_STEPS
-
+from src.api.store import _SSE_CLOSE_STEPS, RunStore
 
 # ---------------------------------------------------------------------------
 # Unit tests — RunStore.stream_steps()

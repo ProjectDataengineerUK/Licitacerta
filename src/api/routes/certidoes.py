@@ -18,8 +18,9 @@ router = APIRouter(prefix="/certidoes", tags=["certidoes"])
 async def list_certidoes(request: Request) -> JSONResponse:
     tenant_id: str = getattr(request.state, "tenant_id", "dev")
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)
@@ -43,8 +44,9 @@ async def upload_certidao(request: Request, file: UploadFile, tipo: str) -> JSON
     gcs_path = store.upload_raw(tenant_id, f"cert_{cert_id}", content, file.content_type or "application/pdf")
 
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)

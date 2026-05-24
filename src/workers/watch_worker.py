@@ -13,7 +13,7 @@ def run() -> None:
 
 
 async def _async_run() -> None:
-    from sqlalchemy import select, text
+    from sqlalchemy import text
 
     from src.config import settings
     from src.gcp.alloydb import create_alloydb_engine, create_session_factory

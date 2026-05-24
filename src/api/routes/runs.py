@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from src.api.auth import require_role
 from src.api.deps import get_graph, get_store
 from src.api.models import ApproveRequest, RejectRequest, RunResult, RunStatus
-from src.api.store import RunStore, _SSE_CLOSE_STEPS
+from src.api.store import RunStore
 from src.observability import get_langfuse_handler
 
 router = APIRouter()

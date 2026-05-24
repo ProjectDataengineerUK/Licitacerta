@@ -24,8 +24,9 @@ class HITLDecision(BaseModel):
 async def list_hitl(request: Request) -> JSONResponse:
     tenant_id: str = getattr(request.state, "tenant_id", "dev")
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)
@@ -55,8 +56,9 @@ async def _decide(run_id: str, decision: str, notes: str, request: Request) -> J
     tenant_id: str = getattr(request.state, "tenant_id", "dev")
     uid: str = getattr(request.state, "uid", "unknown")
     from sqlalchemy import text
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
+
     from src.config import settings
+    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
 
     engine = create_alloydb_engine(settings.alloydb_instance_uri, settings.alloydb_db)
     session_factory = create_session_factory(engine)

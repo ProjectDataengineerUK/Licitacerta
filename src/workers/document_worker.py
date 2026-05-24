@@ -9,7 +9,6 @@ from __future__ import annotations
 import json
 import os
 
-from src.config import settings
 from src.gcp.document_ai import DocumentAIClient
 from src.gcp.pubsub import PubSubPublisher
 from src.gcp.storage import GCSDocumentStore

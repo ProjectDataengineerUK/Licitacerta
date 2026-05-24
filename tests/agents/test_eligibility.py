@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.agents.eligibility import (
     EligibilityAgent,
@@ -160,7 +161,7 @@ class TestEligibilityAgentAsync:
 
 class TestInstantiation:
     def test_no_typeerror_on_instantiation(self):
-        """AT-007: EligibilityAgent() instantiates without TypeError — _llm via get_llm, not build_agent(model_id=...)."""
+        """AT-007: EligibilityAgent() instantiates without TypeError — _llm via get_llm."""
         with patch("src.agents.eligibility.get_llm") as mock_get_llm:
             mock_llm = MagicMock()
             mock_llm.with_structured_output.return_value = mock_llm

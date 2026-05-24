@@ -1,9 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-from langgraph.types import Command
 
 from src.graph.state import initial_state
 from src.schemas.results import (
@@ -11,11 +10,9 @@ from src.schemas.results import (
     BlacklistResult,
     ComplianceResult,
     EligibilityResult,
-    LegalRegimeResult,
     PricingResult,
 )
 from src.schemas.tender import TenderSchema
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -88,17 +85,9 @@ def supervisor_with_hitl():
 # Testes AT-003
 # ---------------------------------------------------------------------------
 
-def test_hitl_pipeline_pauses_at_decided(supervisor_with_hitl):
+def test_hitl_pipeline_pauses_at_decided(supervisor_with_hitl):  # noqa: ARG001
     """AT-003: Pipeline deve pausar no interrupt_before_execution ao chegar em 'decided'."""
-    graph = supervisor_with_hitl
     state = _make_state_at_decided()
-
-    # Invocar com subgraph_decision como entrada para atingir o interrupt
-    # O supervisor compila com interrupt_before=["interrupt_before_execution"]
-    # Usar thread_id para checkpointer in-memory
-    from langgraph.checkpoint.memory import MemorySaver
-    checkpointer = MemorySaver()
-    compiled = supervisor_with_hitl  # já compilado
 
     # Recompilar com checkpointer para suportar resume
     from src.graph.supervisor import build_supervisor
@@ -121,7 +110,6 @@ def test_hitl_pipeline_pauses_at_decided(supervisor_with_hitl):
 
 def test_hitl_interrupt_node_produces_approval():
     """AT-003: hitl_interrupt() deve retornar HumanApproval quando resume com payload válido."""
-    from unittest.mock import patch
 
     approval_payload = {
         "decision": "approved",
@@ -146,7 +134,6 @@ def test_hitl_interrupt_node_produces_approval():
 
 def test_hitl_interrupt_rejected():
     """AT-003: Rejeição humana deve resultar em current_step='rejected'."""
-    from unittest.mock import patch
 
     rejection_payload = {
         "decision": "rejected",
@@ -166,7 +153,6 @@ def test_hitl_interrupt_rejected():
 
 def test_hitl_interrupt_payload_contains_bid_context():
     """AT-003: O payload enviado ao humano deve incluir bid_decision e pricing."""
-    from unittest.mock import patch
 
     captured_payload = {}
 
@@ -190,6 +176,7 @@ def test_hitl_interrupt_payload_contains_bid_context():
 def test_hitl_approvals_are_append_only():
     """Verificar que human_approvals respeita o reducer append-only do TenderState."""
     import operator
+
     from src.schemas.results import HumanApproval
 
     approval1 = HumanApproval(

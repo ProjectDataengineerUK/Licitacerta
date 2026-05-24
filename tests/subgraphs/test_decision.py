@@ -11,7 +11,6 @@ from src.schemas.results import (
     BlacklistResult,
     ComplianceResult,
     EligibilityResult,
-    LegalRegimeResult,
     PricingResult,
 )
 from src.schemas.tender import TenderSchema
@@ -132,7 +131,7 @@ def test_decision_audit_log_order(decision_graph_with_mocks):
 def test_decision_context_minimum(decision_graph_with_mocks):
     """Pricing recebe apenas os campos necessários (ADR-002)."""
     graph, mock_pricing, _ = decision_graph_with_mocks
-    result = graph.invoke(_base_state())
+    graph.invoke(_base_state())
 
     ctx = mock_pricing.run.call_args[0][0]
     assert "tender_schema" in ctx

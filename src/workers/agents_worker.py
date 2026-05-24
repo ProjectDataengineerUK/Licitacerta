@@ -16,8 +16,6 @@ def handle(payload: dict) -> None:
 
 
 async def _async_handle(payload: dict) -> None:
-    from src.config import settings
-    from src.gcp.alloydb import create_alloydb_engine, create_session_factory, tenant_session
     from src.gcp.pubsub import PubSubPublisher
     from src.gcp.storage import GCSDocumentStore
     from src.graph.builder import build_graph

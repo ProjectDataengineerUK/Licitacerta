@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from httpx import ASGITransport, AsyncClient
 
 
 def _make_app_with_middleware():

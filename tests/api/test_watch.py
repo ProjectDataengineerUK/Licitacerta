@@ -13,12 +13,12 @@ from src.api.store import RunStore
 from src.api.watch_agent import _matches, run_poll_cycle
 from src.api.watch_store import WatchStore
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _make_stub_graph():
+    from src.graph.supervisor import build_supervisor
     from tests.test_pipeline_e2e import (
         _decision_stub,
         _execution_stub,
@@ -27,7 +27,6 @@ def _make_stub_graph():
         _understanding_stub,
         _validation_stub,
     )
-    from src.graph.supervisor import build_supervisor
 
     return build_supervisor(
         ingestion_graph=_ingestion_stub,
@@ -155,7 +154,7 @@ async def test_at001_new_edital_triggers_analyze():
     watch_store = WatchStore()
     run_store = RunStore()
     stub_graph = _make_stub_graph()
-    cfg = await watch_store.create_config(keywords=["construção civil"], cnpj="12345678000195")
+    await watch_store.create_config(keywords=["construção civil"], cnpj="12345678000195")
 
     editais = [_make_edital("PNCP-2026-001", "Construção civil de passarela urbana")]
     pncp_client = PNCPClient(client=AsyncClient(transport=_pncp_transport(editais)))
@@ -174,7 +173,7 @@ async def test_at002_duplicate_pncp_id_not_triggered():
     watch_store = WatchStore()
     run_store = RunStore()
     stub_graph = _make_stub_graph()
-    cfg = await watch_store.create_config(keywords=["construção"], cnpj="12345678000195")
+    await watch_store.create_config(keywords=["construção"], cnpj="12345678000195")
 
     editais = [_make_edital("PNCP-2026-DUP", "Construção de muro")]
     pncp_client = PNCPClient(client=AsyncClient(transport=_pncp_transport(editais)))

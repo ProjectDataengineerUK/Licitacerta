@@ -1,7 +1,7 @@
 import operator
 from datetime import datetime
 
-from src.graph.state import TenderState, initial_state
+from src.graph.state import initial_state
 from src.schemas.results import AgentError, AuditEvent, HumanApproval
 
 

@@ -2,9 +2,7 @@
 from __future__ import annotations
 
 import json
-import math
 from datetime import date, timedelta
-from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -20,6 +18,7 @@ from src.api.watch_store import WatchStore
 
 
 def _make_stub_graph():
+    from src.graph.supervisor import build_supervisor
     from tests.test_pipeline_e2e import (
         _decision_stub,
         _execution_stub,
@@ -28,7 +27,6 @@ def _make_stub_graph():
         _understanding_stub,
         _validation_stub,
     )
-    from src.graph.supervisor import build_supervisor
 
     return build_supervisor(
         ingestion_graph=_ingestion_stub,
@@ -134,7 +132,7 @@ async def test_at003_lookback_default_is_one_day(monkeypatch):
     monkeypatch.setattr(watch_agent_mod, "_INITIAL_LOOKBACK_DAYS", 1)
     watch_store = WatchStore()
     run_store = RunStore()
-    cfg = await watch_store.create_config(keywords=["obra"], cnpj="12345678000195")
+    await watch_store.create_config(keywords=["obra"], cnpj="12345678000195")
 
     captured_dates = []
 

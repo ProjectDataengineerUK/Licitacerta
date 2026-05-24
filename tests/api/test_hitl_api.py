@@ -1,8 +1,6 @@
 """AT-003: Status pausado no HITL. AT-004: Approve. AT-005: Reject."""
 import asyncio
-from decimal import Decimal
 
-import pytest
 from httpx import AsyncClient
 
 

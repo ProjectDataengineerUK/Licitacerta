@@ -1,4 +1,3 @@
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +11,9 @@ from src.schemas.tender import Evidence, PageContent, TenderSchema
 def _make_pages() -> list[PageContent]:
     return [
         PageContent(page_number=1, text="Objeto: Aquisição de computadores.", tables=[], is_ocr=False),
-        PageContent(page_number=2, text="Regime: Lei 14.133/2021. Modalidade: Pregão Eletrônico.", tables=[], is_ocr=False),
+        PageContent(
+            page_number=2, text="Regime: Lei 14.133/2021. Modalidade: Pregão Eletrônico.", tables=[], is_ocr=False
+        ),
     ]
 
 

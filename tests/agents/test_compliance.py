@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.agents.compliance import ComplianceAgent, _calc_cost_brl, _extract_usage
 from src.schemas.results import ComplianceResult

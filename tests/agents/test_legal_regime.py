@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.agents.legal_regime import (
     LegalRegimeAgent,
@@ -101,7 +102,7 @@ class TestRun:
             patch("src.gcp.bigquery.BigQueryWriter.from_env", return_value=mock_bq),
         ):
             agent._bq = None
-            result = agent.run({
+            agent.run({
                 "edital_pages": "texto",
                 "run_id": "run-456",
                 "tenant_id": "tenant-xyz",

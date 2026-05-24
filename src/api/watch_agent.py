@@ -4,15 +4,15 @@ import asyncio
 import logging
 import os
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from uuid import UUID
-
-_INITIAL_LOOKBACK_DAYS = int(os.getenv("WATCH_INITIAL_LOOKBACK_DAYS", "1"))
 
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
 from src.api.watch_store import WatchStore
 from src.graph.state import initial_state
+
+_INITIAL_LOOKBACK_DAYS = int(os.getenv("WATCH_INITIAL_LOOKBACK_DAYS", "1"))
 
 logger = logging.getLogger(__name__)
 
