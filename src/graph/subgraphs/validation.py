@@ -21,14 +21,16 @@ def build_validation_subgraph(blacklist_fn=None):
     from src.tools.blacklist import check_blacklist
 
     _blacklist = blacklist_fn or (lambda cnpj: check_blacklist(cnpj, cfg.cgu_api_key))
-
-    elig_agent = EligibilityAgent()
-    comp_agent = ComplianceAgent()
+    _elig: EligibilityAgent | None = None
+    _comp: ComplianceAgent | None = None
 
     def run_eligibility(state: TenderState) -> dict:
+        nonlocal _elig
+        if _elig is None:
+            _elig = EligibilityAgent()
         t0 = time.time()
         try:
-            result = elig_agent.run({
+            result = _elig.run({
                 "tender_schema": state.get("tender_schema"),
                 "company_cnpj": state["company_cnpj"],
                 "run_id": state.get("run_id"),
@@ -65,9 +67,12 @@ def build_validation_subgraph(blacklist_fn=None):
             }
 
     def run_compliance(state: TenderState) -> dict:
+        nonlocal _comp
+        if _comp is None:
+            _comp = ComplianceAgent()
         t0 = time.time()
         try:
-            result = comp_agent.run({
+            result = _comp.run({
                 "tender_schema": state.get("tender_schema"),
                 "legal_regime": state.get("legal_regime"),
                 "run_id": state.get("run_id"),

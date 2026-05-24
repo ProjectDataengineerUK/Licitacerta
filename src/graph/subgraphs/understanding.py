@@ -13,16 +13,19 @@ from src.schemas.results import AgentError, AuditEvent
 
 
 def build_understanding_subgraph():
-    tu_agent = TenderUnderstandingAgent()
-    lr_agent = LegalRegimeAgent()
+    _tu: TenderUnderstandingAgent | None = None
+    _lr: LegalRegimeAgent | None = None
 
     def run_tender_understanding(state: TenderState) -> dict:
+        nonlocal _tu
+        if _tu is None:
+            _tu = TenderUnderstandingAgent()
         t0 = time.time()
         try:
             pages_text = "\n\n".join(
                 f"[Página {p.page_number}]\n{p.text}" for p in state["edital_pages"]
             )
-            schema = tu_agent.run({
+            schema = _tu.run({
                 "edital_pages": pages_text,
                 "edital_id": state["edital_id"],
                 "run_id": state.get("run_id"),
@@ -60,14 +63,17 @@ def build_understanding_subgraph():
             }
 
     def run_legal_regime(state: TenderState) -> dict:
+        nonlocal _lr
         if state.get("current_step") == "understanding_failed":
             return {}
+        if _lr is None:
+            _lr = LegalRegimeAgent()
         t0 = time.time()
         try:
             pages_text = "\n\n".join(
                 f"[Página {p.page_number}]\n{p.text}" for p in state["edital_pages"]
             )
-            regime = lr_agent.run({
+            regime = _lr.run({
                 "edital_pages": pages_text,
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),

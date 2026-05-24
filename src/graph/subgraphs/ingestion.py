@@ -12,12 +12,15 @@ from src.schemas.results import AgentError, AuditEvent
 
 
 def build_ingestion_subgraph():
-    agent = ReadParseAgent()
+    _agent: ReadParseAgent | None = None
 
     def run_read_parse(state: TenderState) -> dict:
+        nonlocal _agent
+        if _agent is None:
+            _agent = ReadParseAgent()
         t0 = time.time()
         try:
-            pages = agent.run({
+            pages = _agent.run({
                 "edital_raw": state["edital_raw"],
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),

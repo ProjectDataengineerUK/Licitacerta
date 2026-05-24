@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 from src.api.pncp_client import PNCPClient
 from src.api.routes.analyze import router as analyze_router
@@ -26,22 +25,7 @@ from src.graph.supervisor import build_supervisor
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    serde = JsonPlusSerializer(allowed_msgpack_modules=[
-        ("src.schemas.results", "HumanApproval"),
-        ("src.schemas.results", "AuditEvent"),
-        ("src.schemas.results", "AgentError"),
-        ("src.schemas.results", "AgentMetric"),
-        ("src.schemas.results", "BidDecision"),
-        ("src.schemas.results", "BlacklistResult"),
-        ("src.schemas.results", "ComplianceResult"),
-        ("src.schemas.results", "EligibilityResult"),
-        ("src.schemas.results", "LegalRegimeResult"),
-        ("src.schemas.results", "PricingResult"),
-        ("src.schemas.results", "ProposalDraft"),
-        ("src.schemas.tender", "PageContent"),
-        ("src.schemas.tender", "TenderSchema"),
-    ])
-    checkpointer = MemorySaver(serde=serde)
+    checkpointer = MemorySaver()
     app.state.graph = build_supervisor(checkpointer=checkpointer)
     app.state.store = RunStore()
     app.state.watch_store = WatchStore()

@@ -13,13 +13,16 @@ from src.schemas.results import AgentError, AuditEvent
 
 
 def build_decision_subgraph():
-    pricing_agent = PricingAgent()
-    bid_agent = BidNoBidAgent()
+    _pricing: PricingAgent | None = None
+    _bid: BidNoBidAgent | None = None
 
     def run_pricing(state: TenderState) -> dict:
+        nonlocal _pricing
+        if _pricing is None:
+            _pricing = PricingAgent()
         t0 = time.time()
         try:
-            result = pricing_agent.run({
+            result = _pricing.run({
                 "tender_schema": state.get("tender_schema"),
                 "eligibility": state.get("eligibility"),
                 "compliance": state.get("compliance"),
@@ -59,9 +62,12 @@ def build_decision_subgraph():
             }
 
     def run_bid_no_bid(state: TenderState) -> dict:
+        nonlocal _bid
+        if _bid is None:
+            _bid = BidNoBidAgent()
         t0 = time.time()
         try:
-            result = bid_agent.run({
+            result = _bid.run({
                 "tender_schema": state.get("tender_schema"),
                 "eligibility": state.get("eligibility"),
                 "compliance": state.get("compliance"),

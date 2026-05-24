@@ -98,7 +98,7 @@ class RunStore:
             edital_id=s.get("edital_id", ""),
             bid_decision=_serialize(s.get("bid_decision")),
             pricing=_serialize(s.get("pricing")),
-            errors=[_serialize(e) for e in s.get("errors", [])],
+            errors=[d for e in s.get("errors", []) if (d := _serialize(e)) is not None],
         )
 
     def to_result(self, entry: RunEntry) -> RunResult:
@@ -109,11 +109,11 @@ class RunStore:
             edital_id=s.get("edital_id", ""),
             bid_decision=_serialize(s.get("bid_decision")),
             pricing=_serialize(s.get("pricing")),
-            errors=[_serialize(e) for e in s.get("errors", [])],
+            errors=[d for e in s.get("errors", []) if (d := _serialize(e)) is not None],
             tender_schema=_serialize(s.get("tender_schema")),
             eligibility=_serialize(s.get("eligibility")),
             compliance=_serialize(s.get("compliance")),
             blacklist=_serialize(s.get("blacklist")),
             proposal_draft=_serialize(s.get("proposal_draft")),
-            audit_log=[_serialize(a) for a in s.get("audit_log", [])],
+            audit_log=[d for a in s.get("audit_log", []) if (d := _serialize(a)) is not None],
         )

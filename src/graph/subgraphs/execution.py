@@ -12,12 +12,15 @@ from src.schemas.results import AgentError, AuditEvent
 
 
 def build_execution_subgraph():
-    proposal_agent = ProposalAgent()
+    _proposal: ProposalAgent | None = None
 
     def run_proposal(state: TenderState) -> dict:
+        nonlocal _proposal
+        if _proposal is None:
+            _proposal = ProposalAgent()
         t0 = time.time()
         try:
-            result = proposal_agent.run({
+            result = _proposal.run({
                 "tender_schema": state.get("tender_schema"),
                 "pricing": state.get("pricing"),
                 "bid_decision": state.get("bid_decision"),

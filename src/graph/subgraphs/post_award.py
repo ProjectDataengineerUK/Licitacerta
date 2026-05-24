@@ -12,15 +12,18 @@ from src.schemas.results import AgentError, AuditEvent
 
 
 def build_post_award_subgraph():
-    contract_agent = ContractAgent()
+    _contract: ContractAgent | None = None
 
     def run_contract(state: TenderState) -> dict:
+        nonlocal _contract
+        if _contract is None:
+            _contract = ContractAgent()
         t0 = time.time()
         try:
-            result = contract_agent.run({
+            result = _contract.run({
                 "tender_schema": state.get("tender_schema"),
                 "proposal_draft": state.get("proposal_draft"),
-                "contract_data": {},  # preenchido via API quando contrato for firmado
+                "contract_data": {},
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })

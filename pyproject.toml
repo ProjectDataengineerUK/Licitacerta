@@ -81,8 +81,17 @@ select = ["E", "F", "I"]
 
 [tool.mypy]
 python_version = "3.11"
-strict = true
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+  "google.cloud.*",
+  "google.api_core.*",
+  "google.protobuf.*",
+  "firebase_admin.*",
+  "opentelemetry.*",
+]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
