@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 import httpx
@@ -7,12 +8,15 @@ import respx
 from src.tools.blacklist import CGU_BASE, check_blacklist
 
 
+def _mock_endpoint(endpoint: str, **kwargs):
+    """Register a respx route matching the endpoint regardless of query params."""
+    return respx.get(re.compile(rf"{re.escape(CGU_BASE)}/{endpoint}")).mock(**kwargs)
+
+
 @respx.mock
 def test_blacklist_clean_cnpj_not_blocked():
     for endpoint in ("ceis", "cnep", "cepim"):
-        respx.get(f"{CGU_BASE}/{endpoint}").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        _mock_endpoint(endpoint, return_value=httpx.Response(200, json=[]))
 
     result = check_blacklist("12.345.678/0001-95", api_key="test-key")
 
@@ -25,11 +29,9 @@ def test_blacklist_clean_cnpj_not_blocked():
 
 @respx.mock
 def test_blacklist_ceis_blocked():
-    respx.get(f"{CGU_BASE}/ceis").mock(
-        return_value=httpx.Response(200, json=[{"cnpj": "12345678000195"}])
-    )
-    respx.get(f"{CGU_BASE}/cnep").mock(return_value=httpx.Response(200, json=[]))
-    respx.get(f"{CGU_BASE}/cepim").mock(return_value=httpx.Response(200, json=[]))
+    _mock_endpoint("ceis", return_value=httpx.Response(200, json=[{"cnpj": "12345678000195"}]))
+    _mock_endpoint("cnep", return_value=httpx.Response(200, json=[]))
+    _mock_endpoint("cepim", return_value=httpx.Response(200, json=[]))
 
     result = check_blacklist("12345678000195", api_key="test-key")
 
@@ -42,9 +44,7 @@ def test_blacklist_ceis_blocked():
 @respx.mock
 def test_blacklist_all_blocked():
     for endpoint in ("ceis", "cnep", "cepim"):
-        respx.get(f"{CGU_BASE}/{endpoint}").mock(
-            return_value=httpx.Response(200, json=[{"cnpj": "12345678000195"}])
-        )
+        _mock_endpoint(endpoint, return_value=httpx.Response(200, json=[{"cnpj": "12345678000195"}]))
 
     result = check_blacklist("12.345.678/0001-95", api_key="test-key")
 
@@ -58,11 +58,8 @@ def test_blacklist_all_blocked():
 def test_blacklist_strips_cnpj_formatting():
     """CNPJ com pontuação deve produzir a mesma requisição que sem pontuação."""
     for endpoint in ("ceis", "cnep", "cepim"):
-        respx.get(f"{CGU_BASE}/{endpoint}").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        _mock_endpoint(endpoint, return_value=httpx.Response(200, json=[]))
 
-    # Não deve lançar exceção independente do formato
     result_formatted = check_blacklist("12.345.678/0001-95", api_key="key")
     result_raw = check_blacklist("12345678000195", api_key="key")
 
@@ -71,7 +68,7 @@ def test_blacklist_strips_cnpj_formatting():
 
 @respx.mock
 def test_blacklist_raises_on_api_error():
-    respx.get(f"{CGU_BASE}/ceis").mock(return_value=httpx.Response(500))
+    _mock_endpoint("ceis", return_value=httpx.Response(500))
 
     with pytest.raises(httpx.HTTPStatusError):
         check_blacklist("12345678000195", api_key="test-key")
@@ -81,9 +78,7 @@ def test_blacklist_raises_on_api_error():
 def test_blacklist_no_llm_called(mocker):
     """Verifica que nenhum cliente Anthropic é instanciado durante a consulta."""
     for endpoint in ("ceis", "cnep", "cepim"):
-        respx.get(f"{CGU_BASE}/{endpoint}").mock(
-            return_value=httpx.Response(200, json=[])
-        )
+        _mock_endpoint(endpoint, return_value=httpx.Response(200, json=[]))
 
     mock_anthropic = mocker.patch("anthropic.Anthropic")
     check_blacklist("12345678000195", api_key="key")
