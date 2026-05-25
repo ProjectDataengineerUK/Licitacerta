@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # GCP
     gcp_project_id: str = ""
     gcp_region: str = "southamerica-east1"
+    vertex_ai_location: str = "us-central1"  # Gemini models are published in us-central1
     document_ai_location: str = "us"
     document_ai_processor_id: str = ""
     gcs_bucket_docs: str = ""
@@ -21,9 +22,9 @@ class Settings(BaseSettings):
     tasks_queue_hitl: str = "hitl-approvals"
 
     # Gemini model IDs (Vertex AI)
-    gemini_flash: str = "gemini-2.0-flash-001"
+    gemini_flash: str = "gemini-1.5-flash-002"
     gemini_pro: str = "gemini-1.5-pro-002"
-    gemini_generate: str = "gemini-2.5-pro-preview-05-06"
+    gemini_generate: str = "gemini-1.5-pro-002"
 
     # Other
     cgu_api_key: str = ""

@@ -60,13 +60,27 @@ Analise CADA campo do edital estruturado sistematicamente, nesta ordem:
 
 Apenas após analisar todos os campos, emita o risk_level final.
 
-## Escala de risco
+## Escala de risco — calibração obrigatória
 
-- **critical**: cláusula ilegal, nula de pleno direito; participação resultaria em desclassificação ou \
-  impugnação pela própria Administração
-- **high**: cláusula restritiva grave com precedente TCU contrário; alto risco de recurso/impugnação
-- **medium**: cláusula questionável mas sem precedente direto; risco moderado
-- **low**: edital dentro dos padrões legais; pequenas ressalvas não bloqueantes
+Use EXATAMENTE os critérios abaixo. Não eleve o nível sem a condição específica estar presente.
+
+- **critical**: exigência SEM QUALQUER base legal (ex: certidão emitida por entidade privada sem \
+  previsão em lei; declarações que a lei não autoriza); participação tornaria a empresa automaticamente \
+  inabilitada se não cumprir; nulidade de pleno direito. Use apenas quando a ilegalidade for flagrante \
+  e sem exceção possível.
+
+- **high**: cláusula restritiva com precedente TCU contrário MAS que PODERIA ter justificativa técnica \
+  (ex: especificação de marca/modelo quando há equivalentes no mercado; garantia acima do limite legal; \
+  prazo de entrega inexequível). Há risco real de impugnação mas a Administração PODERIA alegar \
+  justificativa. NÃO eleve para critical se houver qualquer justificativa técnica plausível.
+
+- **medium**: cláusula questionável mas sem precedente TCU direto; risco moderado de impugnação.
+
+- **low**: edital dentro dos padrões legais; pequenas ressalvas que não bloqueiam participação. \
+  Um edital com documentos habituais (CNPJ, CND Federal, FGTS), sem exigências técnicas especiais \
+  e com penalidades proporcionais é SEMPRE low, mesmo que você identifique pontos de atenção menores.
+
+**Regra de desempate**: na dúvida entre dois níveis adjacentes, escolha o MENOR.
 
 Se risk_level for "critical" ou "high", `human_decision_required` DEVE ser True."""
 

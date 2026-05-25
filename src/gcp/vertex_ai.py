@@ -15,7 +15,7 @@ class VertexAILLM:
         from langchain_google_vertexai import ChatVertexAI  # lazy import
 
         project = os.environ["GCP_PROJECT_ID"]
-        location = os.environ.get("GCP_REGION", "southamerica-east1")
+        location = os.environ.get("VERTEX_AI_LOCATION", "us-central1")
         model = ChatVertexAI(
             model_name=model_id,
             project=project,
@@ -43,7 +43,7 @@ class VertexAIEmbeddings:
         from langchain_google_vertexai import VertexAIEmbeddings as _Embeddings  # lazy import
 
         project = os.environ["GCP_PROJECT_ID"]
-        location = os.environ.get("GCP_REGION", "southamerica-east1")
+        location = os.environ.get("VERTEX_AI_LOCATION", "us-central1")
         model = _Embeddings(model_name=model_id, project=project, location=location)
         return cls(model)
 
