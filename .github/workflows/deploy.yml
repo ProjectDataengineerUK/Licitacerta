@@ -66,9 +66,5 @@ jobs:
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ needs.build-push.outputs.image_tag }}
 
-      - name: Deploy Worker to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: licitacerta-worker-dev
-          region: ${{ secrets.GCP_REGION }}
-          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ needs.build-push.outputs.image_tag }}
+      # Workers são Cloud Run Jobs (ativados por Pub/Sub), não Services HTTP.
+      # O deploy do worker image é feito via terraform (cloud_run_v2_job) — não aqui.
