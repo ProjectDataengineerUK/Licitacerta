@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from typing import Any
 
 import psycopg
@@ -20,8 +19,6 @@ _SELECT_SQL = """
     ORDER BY embedding <=> %s::vector
     LIMIT %s
 """
-
-_DEFAULT_DB_URLS = {"", "postgresql://localhost/licitacerta"}
 
 
 class JuridicalChunk(BaseModel):
@@ -47,7 +44,7 @@ class JuridicalSearchTool:
     @classmethod
     def from_env(cls) -> JuridicalSearchTool:
         url = (settings.database_url or "").strip()
-        if url in _DEFAULT_DB_URLS or not os.environ.get("GCP_PROJECT_ID"):
+        if not url:
             return _NoOpJuridicalSearchTool()
         try:
             from src.gcp.vertex_ai import VertexAIEmbeddings

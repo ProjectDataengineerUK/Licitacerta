@@ -111,14 +111,14 @@ async def test_at006_asearch_returns_empty_on_timeout():
 
 def test_from_env_returns_noop_when_no_gcp(monkeypatch):
     monkeypatch.delenv("GCP_PROJECT_ID", raising=False)
+    monkeypatch.setattr("src.tools.juridical_search.settings.database_url",
+                        "postgresql://localhost/licitacerta")
     tool = JuridicalSearchTool.from_env()
     assert isinstance(tool, _NoOpJuridicalSearchTool)
 
 
-def test_from_env_returns_noop_when_default_db(monkeypatch):
-    monkeypatch.setenv("GCP_PROJECT_ID", "my-project")
-    monkeypatch.setattr("src.tools.juridical_search.settings.database_url",
-                        "postgresql://localhost/licitacerta")
+def test_from_env_returns_noop_when_empty_db_url(monkeypatch):
+    monkeypatch.setattr("src.tools.juridical_search.settings.database_url", "")
     tool = JuridicalSearchTool.from_env()
     assert isinstance(tool, _NoOpJuridicalSearchTool)
 
