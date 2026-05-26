@@ -21,6 +21,8 @@ sqlalchemy = "^2.0"
 alembic = "^1.14"
 asyncpg = "^0.30"
 psycopg2-binary = "^2.9"
+psycopg = { version = "^3.3", extras = ["binary"] }
+pgvector = "^0.3.6"
 redis = "^5.2"
 httpx = "^0.28"
 pypdf2 = "^3.0"

@@ -33,6 +33,7 @@ class ComplianceResult(AgentResult):
     risk_level: Literal["low", "medium", "high", "critical"]
     restrictive_clauses: list[Issue] = []
     tcu_precedents: list[str] = []
+    juridical_context_used: bool = False
 
 
 class BlacklistResult(BaseModel):

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 import threading
 import time
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
+
+logger = logging.getLogger(__name__)
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -108,6 +111,7 @@ class ComplianceAgent:
         self._bq: BigQueryWriter | None = None
         self._last_metric: AgentMetric | None = None
         self._metric_lock = threading.Lock()
+        self._rag_tool: Any = None
 
     def _set_last_metric(
         self,
@@ -153,14 +157,60 @@ class ComplianceAgent:
         except Exception:
             return contextlib.nullcontext()
 
-    def _build_messages(self, context: dict) -> list:
+    def _get_rag_tool(self) -> Any:
+        if self._rag_tool is None:
+            try:
+                from src.tools.juridical_search import JuridicalSearchTool
+                self._rag_tool = JuridicalSearchTool.from_env()
+            except Exception:
+                from src.tools.juridical_search import _NoOpJuridicalSearchTool
+                self._rag_tool = _NoOpJuridicalSearchTool()
+        return self._rag_tool
+
+    def _query_from_context(self, context: dict, content: str) -> str:
+        from src.schemas.tender import TenderSchema
+        tender = context.get("tender_schema")
+        parts: list[str] = []
+        if isinstance(tender, TenderSchema):
+            if tender.objeto:
+                parts.append(tender.objeto[:200])
+            if tender.exigencias_tecnicas:
+                parts.append(" ".join(tender.exigencias_tecnicas[:3]))
+        return " ".join(parts) or content[:300]
+
+    def _build_messages(self, context: dict) -> tuple[list, bool]:
         from src.schemas.tender import TenderSchema
         tender = context.get("tender_schema")
         content = tender.model_dump_json(indent=2) if isinstance(tender, TenderSchema) else str(context)
-        return [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=f"Analise o seguinte edital estruturado:\n\n{content}"),
-        ]
+        query = self._query_from_context(context, content)
+        try:
+            chunks = self._get_rag_tool().search(query, top_k=5)
+        except Exception:
+            chunks = []
+        return self._assemble_messages(content, chunks), bool(chunks)
+
+    async def _abuild_messages(self, context: dict) -> tuple[list, bool]:
+        from src.schemas.tender import TenderSchema
+        tender = context.get("tender_schema")
+        content = tender.model_dump_json(indent=2) if isinstance(tender, TenderSchema) else str(context)
+        query = self._query_from_context(context, content)
+        try:
+            chunks = await self._get_rag_tool().asearch(query, top_k=5)
+        except Exception:
+            chunks = []
+        return self._assemble_messages(content, chunks), bool(chunks)
+
+    @staticmethod
+    def _assemble_messages(content: str, chunks: list) -> list:
+        messages: list = [SystemMessage(content=SYSTEM_PROMPT)]
+        if chunks:
+            rag_block = "## Jurisprudência relevante recuperada da base\n\n" + "\n\n".join(
+                f"**{c.tipo.upper()} {c.numero} ({c.fonte})**\n{c.texto}"
+                for c in chunks
+            )
+            messages.append(HumanMessage(content=rag_block))
+        messages.append(HumanMessage(content=f"Analise o seguinte edital estruturado:\n\n{content}"))
+        return messages
 
     def _log_bq(
         self,
@@ -198,7 +248,7 @@ class ComplianceAgent:
     def run(self, context: dict) -> ComplianceResult:
         run_id = context.get("run_id") or str(uuid.uuid4())
         tenant_id = context.get("tenant_id", "unknown")
-        messages = self._build_messages(context)
+        messages, juridical_context_used = self._build_messages(context)
         callbacks = self._get_callbacks(run_id)
         invoke_config = {"callbacks": callbacks} if callbacks else {}
 
@@ -220,12 +270,13 @@ class ComplianceAgent:
         parsed = result.get("parsed")
         if parsed is None:
             raise ValueError(f"ComplianceAgent structured output failed: {result.get('parsing_error')}")
+        parsed.juridical_context_used = juridical_context_used
         return parsed
 
     async def arun(self, context: dict) -> ComplianceResult:
         run_id = context.get("run_id") or str(uuid.uuid4())
         tenant_id = context.get("tenant_id", "unknown")
-        messages = self._build_messages(context)
+        messages, juridical_context_used = await self._abuild_messages(context)
         callbacks = self._get_callbacks(run_id)
         invoke_config = {"callbacks": callbacks} if callbacks else {}
 
@@ -247,4 +298,5 @@ class ComplianceAgent:
         parsed = result.get("parsed")
         if parsed is None:
             raise ValueError(f"ComplianceAgent structured output failed: {result.get('parsing_error')}")
+        parsed.juridical_context_used = juridical_context_used
         return parsed
