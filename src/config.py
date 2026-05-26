@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     alloydb_db: str = "licitacerta"
     tasks_queue_hitl: str = "hitl-approvals"
 
-    # Gemini model IDs (Vertex AI)
-    gemini_flash: str = "gemini-1.5-flash-002"
-    gemini_pro: str = "gemini-1.5-pro-002"
-    gemini_generate: str = "gemini-1.5-pro-002"
+    # Gemini model IDs (Vertex AI) — use 2.5 family for projects created after March 2026
+    gemini_flash: str = "gemini-2.5-flash"
+    gemini_pro: str = "gemini-2.5-pro"
+    gemini_generate: str = "gemini-2.5-pro"
 
     # Other
     cgu_api_key: str = ""
