@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph
 
 from src.agents.read_parse import ReadParseAgent
 from src.config import settings
+from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent
 
@@ -14,17 +15,18 @@ from src.schemas.results import AgentError, AuditEvent
 def build_ingestion_subgraph():
     _agent: ReadParseAgent | None = None
 
-    def run_read_parse(state: TenderState) -> dict:
+    async def run_read_parse(state: TenderState) -> dict:
         nonlocal _agent
         if _agent is None:
             _agent = ReadParseAgent()
         t0 = time.time()
         try:
-            pages = _agent.run({
+            pages = await run_in_thread(_agent.run, {
                 "edital_raw": state["edital_raw"],
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _agent.get_last_metric()
             return {
                 "edital_pages": pages,
                 "current_step": "ingested",
@@ -41,6 +43,7 @@ def build_ingestion_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {

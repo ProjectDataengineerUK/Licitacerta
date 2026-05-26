@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +38,21 @@ class RunResult(RunStatus):
     blacklist: dict | None = None
     proposal_draft: dict | None = None
     audit_log: list[dict] = []
+
+
+class AgentCost(BaseModel):
+    name: str
+    tokens_in: int
+    tokens_out: int
+    cost_brl: float
+    latency_ms: int | None = None
+
+
+class RunCost(BaseModel):
+    run_id: str
+    agents: list[AgentCost]
+    total_cost_brl: float
+    source: Literal["bigquery", "memory"]
 
 
 def _serialize(obj) -> dict | None:

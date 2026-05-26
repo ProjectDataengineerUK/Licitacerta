@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+import os
 from dataclasses import dataclass
 from typing import Any
 
 from src.api.models import RunResult, RunStatus, _serialize
+
+logger = logging.getLogger(__name__)
+
+
+def _get_cleanup_delay() -> float:
+    raw = os.environ.get("QUEUE_CLEANUP_DELAY_SECONDS", "300")
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return 300.0
 
 _SSE_CLOSE_STEPS = frozenset({
     "completed",
@@ -28,7 +40,20 @@ class RunStore:
     def __init__(self) -> None:
         self._runs: dict[str, RunEntry] = {}
         self._queues: dict[str, asyncio.Queue] = {}
+        self._cleanup_tasks: dict[str, asyncio.Task] = {}
         self._lock = asyncio.Lock()
+
+    async def _cleanup_queue(self, run_id: str, delay: float) -> None:
+        try:
+            await asyncio.sleep(delay)
+            async with self._lock:
+                if run_id in self._queues:
+                    del self._queues[run_id]
+                    logger.debug("queue cleanup run_id=%s delay=%.1fs", run_id, delay)
+                self._cleanup_tasks.pop(run_id, None)
+        except asyncio.CancelledError:
+            self._cleanup_tasks.pop(run_id, None)
+            raise
 
     async def create(self, run_id: str, snapshot: dict[str, Any]) -> None:
         async with self._lock:
@@ -49,6 +74,10 @@ class RunStore:
             if step and step != entry.last_step and run_id in self._queues:
                 entry.last_step = step
                 self._queues[run_id].put_nowait(step)
+                if step in _SSE_CLOSE_STEPS and run_id not in self._cleanup_tasks:
+                    delay = _get_cleanup_delay()
+                    task = asyncio.create_task(self._cleanup_queue(run_id, delay))
+                    self._cleanup_tasks[run_id] = task
 
     async def set_task(self, run_id: str, task: asyncio.Task) -> None:
         async with self._lock:

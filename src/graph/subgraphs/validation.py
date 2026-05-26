@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph
 from src.agents.compliance import ComplianceAgent
 from src.agents.eligibility import EligibilityAgent
 from src.config import settings
+from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent, BlacklistResult
 
@@ -24,18 +25,19 @@ def build_validation_subgraph(blacklist_fn=None):
     _elig: EligibilityAgent | None = None
     _comp: ComplianceAgent | None = None
 
-    def run_eligibility(state: TenderState) -> dict:
+    async def run_eligibility(state: TenderState) -> dict:
         nonlocal _elig
         if _elig is None:
             _elig = EligibilityAgent()
         t0 = time.time()
         try:
-            result = _elig.run({
+            result = await run_in_thread(_elig.run, {
                 "tender_schema": state.get("tender_schema"),
                 "company_cnpj": state["company_cnpj"],
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _elig.get_last_metric()
             return {
                 "eligibility": result,
                 "audit_log": [
@@ -51,6 +53,7 @@ def build_validation_subgraph(blacklist_fn=None):
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {
@@ -66,18 +69,19 @@ def build_validation_subgraph(blacklist_fn=None):
                 ],
             }
 
-    def run_compliance(state: TenderState) -> dict:
+    async def run_compliance(state: TenderState) -> dict:
         nonlocal _comp
         if _comp is None:
             _comp = ComplianceAgent()
         t0 = time.time()
         try:
-            result = _comp.run({
+            result = await run_in_thread(_comp.run, {
                 "tender_schema": state.get("tender_schema"),
                 "legal_regime": state.get("legal_regime"),
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _comp.get_last_metric()
             return {
                 "compliance": result,
                 "audit_log": [
@@ -93,6 +97,7 @@ def build_validation_subgraph(blacklist_fn=None):
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {

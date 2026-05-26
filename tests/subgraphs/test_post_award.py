@@ -71,9 +71,9 @@ def post_award_graph_with_mock():
         yield graph, mock_contract
 
 
-def test_post_award_happy_path(post_award_graph_with_mock):
+async def test_post_award_happy_path(post_award_graph_with_mock):
     graph, _ = post_award_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "completed"
     assert len(result["audit_log"]) == 1
@@ -81,28 +81,28 @@ def test_post_award_happy_path(post_award_graph_with_mock):
     assert result["errors"] == []
 
 
-def test_post_award_error_still_completes(post_award_graph_with_mock):
+async def test_post_award_error_still_completes(post_award_graph_with_mock):
     graph, mock_contract = post_award_graph_with_mock
     mock_contract.run.side_effect = RuntimeError("API indisponível")
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "completed"
     assert len(result["errors"]) == 1
     assert result["errors"][0].recoverable is True
 
 
-def test_post_award_audit_summary(post_award_graph_with_mock):
+async def test_post_award_audit_summary(post_award_graph_with_mock):
     graph, _ = post_award_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     summary = result["audit_log"][0].output_summary
     assert "active" in summary
     assert "obligations=2" in summary
 
 
-def test_post_award_audit_log_model_used(post_award_graph_with_mock):
+async def test_post_award_audit_log_model_used(post_award_graph_with_mock):
     graph, _ = post_award_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["audit_log"][0].model_used == settings.gemini_pro

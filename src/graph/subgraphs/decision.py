@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph
 from src.agents.bid_no_bid import BidNoBidAgent
 from src.agents.pricing import PricingAgent
 from src.config import settings
+from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent
 
@@ -16,13 +17,13 @@ def build_decision_subgraph():
     _pricing: PricingAgent | None = None
     _bid: BidNoBidAgent | None = None
 
-    def run_pricing(state: TenderState) -> dict:
+    async def run_pricing(state: TenderState) -> dict:
         nonlocal _pricing
         if _pricing is None:
             _pricing = PricingAgent()
         t0 = time.time()
         try:
-            result = _pricing.run({
+            result = await run_in_thread(_pricing.run, {
                 "tender_schema": state.get("tender_schema"),
                 "eligibility": state.get("eligibility"),
                 "compliance": state.get("compliance"),
@@ -31,6 +32,7 @@ def build_decision_subgraph():
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _pricing.get_last_metric()
             return {
                 "pricing": result,
                 "audit_log": [
@@ -46,6 +48,7 @@ def build_decision_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {
@@ -61,13 +64,13 @@ def build_decision_subgraph():
                 ],
             }
 
-    def run_bid_no_bid(state: TenderState) -> dict:
+    async def run_bid_no_bid(state: TenderState) -> dict:
         nonlocal _bid
         if _bid is None:
             _bid = BidNoBidAgent()
         t0 = time.time()
         try:
-            result = _bid.run({
+            result = await run_in_thread(_bid.run, {
                 "tender_schema": state.get("tender_schema"),
                 "eligibility": state.get("eligibility"),
                 "compliance": state.get("compliance"),
@@ -76,6 +79,7 @@ def build_decision_subgraph():
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _bid.get_last_metric()
             return {
                 "bid_decision": result,
                 "current_step": "decided",
@@ -92,6 +96,7 @@ def build_decision_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {

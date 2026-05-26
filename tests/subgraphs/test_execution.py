@@ -71,9 +71,9 @@ def execution_graph_with_mock():
         yield graph, mock_proposal
 
 
-def test_execution_happy_path(execution_graph_with_mock):
+async def test_execution_happy_path(execution_graph_with_mock):
     graph, _ = execution_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "executed"
     assert result["proposal_draft"].price == Decimal("47058.82")
@@ -84,28 +84,28 @@ def test_execution_happy_path(execution_graph_with_mock):
     assert result["errors"] == []
 
 
-def test_execution_error_is_not_recoverable(execution_graph_with_mock):
+async def test_execution_error_is_not_recoverable(execution_graph_with_mock):
     graph, mock_proposal = execution_graph_with_mock
     mock_proposal.run.side_effect = RuntimeError("modelo indisponível")
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "execution_failed"
     assert len(result["errors"]) == 1
     assert result["errors"][0].recoverable is False
 
 
-def test_execution_uses_gemini_generate_model(execution_graph_with_mock):
+async def test_execution_uses_gemini_generate_model(execution_graph_with_mock):
     graph, _ = execution_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["audit_log"][0].model_used == settings.gemini_generate
 
 
-def test_execution_context_minimum(execution_graph_with_mock):
+async def test_execution_context_minimum(execution_graph_with_mock):
     """Proposal recebe apenas os campos necessários (ADR-002)."""
     graph, mock_proposal = execution_graph_with_mock
-    graph.invoke(_base_state())
+    await graph.ainvoke(_base_state())
 
     ctx = mock_proposal.run.call_args[0][0]
     assert "tender_schema" in ctx
@@ -118,8 +118,8 @@ def test_execution_context_minimum(execution_graph_with_mock):
     assert "eligibility" not in ctx
 
 
-def test_execution_audit_log_model_used(execution_graph_with_mock):
+async def test_execution_audit_log_model_used(execution_graph_with_mock):
     graph, _ = execution_graph_with_mock
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["audit_log"][0].model_used == settings.gemini_generate

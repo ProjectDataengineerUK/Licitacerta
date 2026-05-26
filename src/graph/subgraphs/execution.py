@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph
 
 from src.agents.proposal import ProposalAgent
 from src.config import settings
+from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent
 
@@ -14,13 +15,13 @@ from src.schemas.results import AgentError, AuditEvent
 def build_execution_subgraph():
     _proposal: ProposalAgent | None = None
 
-    def run_proposal(state: TenderState) -> dict:
+    async def run_proposal(state: TenderState) -> dict:
         nonlocal _proposal
         if _proposal is None:
             _proposal = ProposalAgent()
         t0 = time.time()
         try:
-            result = _proposal.run({
+            result = await run_in_thread(_proposal.run, {
                 "tender_schema": state.get("tender_schema"),
                 "pricing": state.get("pricing"),
                 "bid_decision": state.get("bid_decision"),
@@ -28,6 +29,7 @@ def build_execution_subgraph():
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _proposal.get_last_metric()
             return {
                 "proposal_draft": result,
                 "current_step": "executed",
@@ -44,6 +46,7 @@ def build_execution_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {

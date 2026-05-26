@@ -86,9 +86,9 @@ def decision_graph_with_mocks():
         yield graph, mock_pricing, mock_bid
 
 
-def test_decision_happy_path(decision_graph_with_mocks):
+async def test_decision_happy_path(decision_graph_with_mocks):
     graph, _, _ = decision_graph_with_mocks
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "decided"
     assert result["pricing"].recommended_price == Decimal("97560.98")
@@ -98,21 +98,21 @@ def test_decision_happy_path(decision_graph_with_mocks):
     assert result["errors"] == []
 
 
-def test_decision_nao_participar(decision_graph_with_mocks):
+async def test_decision_nao_participar(decision_graph_with_mocks):
     graph, _, mock_bid = decision_graph_with_mocks
     mock_bid.run.return_value = _make_bid_decision("nao_participar")
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "decided"
     assert result["bid_decision"].recommendation == "nao_participar"
 
 
-def test_decision_pricing_error_continues(decision_graph_with_mocks):
+async def test_decision_pricing_error_continues(decision_graph_with_mocks):
     graph, mock_pricing, _ = decision_graph_with_mocks
     mock_pricing.run.side_effect = RuntimeError("modelo indisponível")
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "decided"
     assert any(e.agent == "pricing" for e in result["errors"])
@@ -120,18 +120,18 @@ def test_decision_pricing_error_continues(decision_graph_with_mocks):
     assert result["bid_decision"] is not None
 
 
-def test_decision_audit_log_order(decision_graph_with_mocks):
+async def test_decision_audit_log_order(decision_graph_with_mocks):
     graph, _, _ = decision_graph_with_mocks
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     agents = [e.agent for e in result["audit_log"]]
     assert agents == ["pricing", "bid_no_bid"]
 
 
-def test_decision_context_minimum(decision_graph_with_mocks):
+async def test_decision_context_minimum(decision_graph_with_mocks):
     """Pricing recebe apenas os campos necessários (ADR-002)."""
     graph, mock_pricing, _ = decision_graph_with_mocks
-    graph.invoke(_base_state())
+    await graph.ainvoke(_base_state())
 
     ctx = mock_pricing.run.call_args[0][0]
     assert "tender_schema" in ctx
@@ -142,9 +142,9 @@ def test_decision_context_minimum(decision_graph_with_mocks):
     assert "edital_pages" not in ctx
 
 
-def test_decision_audit_log_model_used(decision_graph_with_mocks):
+async def test_decision_audit_log_model_used(decision_graph_with_mocks):
     graph, _, _ = decision_graph_with_mocks
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     pricing_event = next(e for e in result["audit_log"] if e.agent == "pricing")
     bid_event = next(e for e in result["audit_log"] if e.agent == "bid_no_bid")

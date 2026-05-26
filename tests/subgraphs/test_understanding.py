@@ -55,12 +55,12 @@ def understanding_graph_with_mocks():
         yield graph, mock_tu, mock_lr
 
 
-def test_understanding_happy_path(understanding_graph_with_mocks):
+async def test_understanding_happy_path(understanding_graph_with_mocks):
     graph, mock_tu, mock_lr = understanding_graph_with_mocks
     state = initial_state("edital-001", "texto bruto", "12345678000195")
     state["edital_pages"] = _make_pages()
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert result["current_step"] == "understood"
     assert result["tender_schema"].objeto == "Aquisição de computadores"
@@ -72,26 +72,26 @@ def test_understanding_happy_path(understanding_graph_with_mocks):
     assert result["errors"] == []
 
 
-def test_understanding_captures_tu_error(understanding_graph_with_mocks):
+async def test_understanding_captures_tu_error(understanding_graph_with_mocks):
     graph, mock_tu, mock_lr = understanding_graph_with_mocks
     mock_tu.run.side_effect = ValueError("contexto insuficiente")
 
     state = initial_state("edital-002", "texto ruim", "12345678000195")
     state["edital_pages"] = _make_pages()
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert result["current_step"] == "understanding_failed"
     assert len(result["errors"]) >= 1
     assert result["errors"][0].agent == "tender_understanding"
 
 
-def test_understanding_audit_log_has_modelo(understanding_graph_with_mocks):
+async def test_understanding_audit_log_has_modelo(understanding_graph_with_mocks):
     graph, _, _ = understanding_graph_with_mocks
     state = initial_state("edital-003", "texto", "12345678000195")
     state["edital_pages"] = _make_pages()
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     tu_event = next(e for e in result["audit_log"] if e.agent == "tender_understanding")
     lr_event = next(e for e in result["audit_log"] if e.agent == "legal_regime")

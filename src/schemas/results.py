@@ -114,3 +114,8 @@ class AgentMetric(BaseModel):
     metric_name: str
     value: float
     timestamp: datetime
+    tokens_in: int | None = None
+    tokens_out: int | None = None
+    cost_brl: float | None = None
+    latency_ms: int | None = None
+    model_id: str | None = None

@@ -80,9 +80,9 @@ def _base_state():
     return state
 
 
-def test_validation_happy_path(validation_graph_with_mocks):
+async def test_validation_happy_path(validation_graph_with_mocks):
     graph, _, _, _ = validation_graph_with_mocks
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "validated"
     assert result["eligibility"].is_eligible is True
@@ -92,22 +92,22 @@ def test_validation_happy_path(validation_graph_with_mocks):
     assert result["errors"] == []
 
 
-def test_validation_blacklist_blocked(validation_graph_with_mocks):
+async def test_validation_blacklist_blocked(validation_graph_with_mocks):
     graph, _, _, mock_bl = validation_graph_with_mocks
     mock_bl.return_value = _make_blacklist(blocked=True)
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "validated"
     assert result["blacklist"].any_blocked is True
     assert result["blacklist"].ceis_blocked is True
 
 
-def test_validation_eligibility_error_continues(validation_graph_with_mocks):
+async def test_validation_eligibility_error_continues(validation_graph_with_mocks):
     graph, mock_elig, _, _ = validation_graph_with_mocks
     mock_elig.run.side_effect = RuntimeError("timeout da API")
 
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     assert result["current_step"] == "validated"
     assert any(e.agent == "eligibility" for e in result["errors"])
@@ -116,19 +116,19 @@ def test_validation_eligibility_error_continues(validation_graph_with_mocks):
     assert result["blacklist"] is not None
 
 
-def test_validation_audit_log_has_deterministic_blacklist(validation_graph_with_mocks):
+async def test_validation_audit_log_has_deterministic_blacklist(validation_graph_with_mocks):
     graph, _, _, _ = validation_graph_with_mocks
-    result = graph.invoke(_base_state())
+    result = await graph.ainvoke(_base_state())
 
     bl_events = [e for e in result["audit_log"] if e.agent == "blacklist"]
     assert len(bl_events) == 1
     assert bl_events[0].model_used == "deterministic"
 
 
-def test_validation_context_minimum(validation_graph_with_mocks):
+async def test_validation_context_minimum(validation_graph_with_mocks):
     """Verifica que eligibility recebe apenas tender_schema + company_cnpj (ADR-002)."""
     graph, mock_elig, _, _ = validation_graph_with_mocks
-    graph.invoke(_base_state())
+    await graph.ainvoke(_base_state())
 
     call_context = mock_elig.run.call_args[0][0]
     assert "tender_schema" in call_context

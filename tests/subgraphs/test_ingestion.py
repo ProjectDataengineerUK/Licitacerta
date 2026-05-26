@@ -26,11 +26,11 @@ def ingestion_graph_with_mock():
         yield graph, mock_agent
 
 
-def test_ingestion_happy_path(ingestion_graph_with_mock):
+async def test_ingestion_happy_path(ingestion_graph_with_mock):
     graph, mock_agent = ingestion_graph_with_mock
     state = initial_state("edital-001", "texto bruto do edital", "12345678000195")
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert result["current_step"] == "ingested"
     assert len(result["edital_pages"]) == 2
@@ -41,12 +41,12 @@ def test_ingestion_happy_path(ingestion_graph_with_mock):
     assert result["errors"] == []
 
 
-def test_ingestion_captures_agent_error(ingestion_graph_with_mock):
+async def test_ingestion_captures_agent_error(ingestion_graph_with_mock):
     graph, mock_agent = ingestion_graph_with_mock
     mock_agent.run.side_effect = ValueError("PDF corrompido")
 
     state = initial_state("edital-002", "pdf corrompido", "12345678000195")
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert result["current_step"] == "ingestion_failed"
     assert len(result["errors"]) == 1
@@ -56,20 +56,20 @@ def test_ingestion_captures_agent_error(ingestion_graph_with_mock):
     assert result["edital_pages"] == []
 
 
-def test_ingestion_audit_log_contains_page_count(ingestion_graph_with_mock):
+async def test_ingestion_audit_log_contains_page_count(ingestion_graph_with_mock):
     graph, _ = ingestion_graph_with_mock
     state = initial_state("edital-003", "texto", "12345678000195")
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert "pages=2" in result["audit_log"][0].output_summary
     assert "edital-003" in result["audit_log"][0].input_summary
 
 
-def test_ingestion_audit_log_model_used(ingestion_graph_with_mock):
+async def test_ingestion_audit_log_model_used(ingestion_graph_with_mock):
     graph, _ = ingestion_graph_with_mock
     state = initial_state("edital-004", "texto", "12345678000195")
 
-    result = graph.invoke(state)
+    result = await graph.ainvoke(state)
 
     assert result["audit_log"][0].model_used == settings.gemini_flash

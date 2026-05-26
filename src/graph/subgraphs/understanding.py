@@ -8,6 +8,7 @@ from langgraph.graph import StateGraph
 from src.agents.legal_regime import LegalRegimeAgent
 from src.agents.tender_understanding import TenderUnderstandingAgent
 from src.config import settings
+from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent
 
@@ -16,7 +17,7 @@ def build_understanding_subgraph():
     _tu: TenderUnderstandingAgent | None = None
     _lr: LegalRegimeAgent | None = None
 
-    def run_tender_understanding(state: TenderState) -> dict:
+    async def run_tender_understanding(state: TenderState) -> dict:
         nonlocal _tu
         if _tu is None:
             _tu = TenderUnderstandingAgent()
@@ -25,12 +26,13 @@ def build_understanding_subgraph():
             pages_text = "\n\n".join(
                 f"[Página {p.page_number}]\n{p.text}" for p in state["edital_pages"]
             )
-            schema = _tu.run({
+            schema = await run_in_thread(_tu.run, {
                 "edital_pages": pages_text,
                 "edital_id": state["edital_id"],
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _tu.get_last_metric()
             return {
                 "tender_schema": schema,
                 "audit_log": [
@@ -46,6 +48,7 @@ def build_understanding_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {
@@ -62,7 +65,7 @@ def build_understanding_subgraph():
                 "current_step": "understanding_failed",
             }
 
-    def run_legal_regime(state: TenderState) -> dict:
+    async def run_legal_regime(state: TenderState) -> dict:
         nonlocal _lr
         if state.get("current_step") == "understanding_failed":
             return {}
@@ -73,11 +76,12 @@ def build_understanding_subgraph():
             pages_text = "\n\n".join(
                 f"[Página {p.page_number}]\n{p.text}" for p in state["edital_pages"]
             )
-            regime = _lr.run({
+            regime = await run_in_thread(_lr.run, {
                 "edital_pages": pages_text,
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            metric = _lr.get_last_metric()
             return {
                 "legal_regime": regime,
                 "current_step": "understood",
@@ -94,6 +98,7 @@ def build_understanding_subgraph():
                         timestamp=datetime.utcnow(),
                     )
                 ],
+                "metrics": [metric] if metric else [],
             }
         except Exception as e:
             return {
