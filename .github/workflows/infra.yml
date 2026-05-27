@@ -89,6 +89,6 @@ jobs:
 
       - name: Terraform apply
         run: |
-          terraform apply -auto-approve \
+          terraform apply -auto-approve -refresh=false \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="artifact_registry_repo=${{ secrets.AR_REPO }}"
