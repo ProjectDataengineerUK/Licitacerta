@@ -2,58 +2,85 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  FileSearch,
+  History,
+  ShieldCheck,
+  Eye,
+  Award,
+  FileText,
+  LogOut,
+} from "lucide-react";
 import { useHITL } from "@/lib/hooks/useHITL";
 import { useAuth } from "@/components/providers";
 import { signOutUser } from "@/lib/firebase";
 
 const LINKS = [
-  { href: "/", label: "Analisar" },
-  { href: "/runs", label: "Histórico" },
-  { href: "/hitl", label: "Aprovações" },
-  { href: "/watch", label: "Watch" },
-  { href: "/certidoes", label: "Certidões" },
-  { href: "/contracts", label: "Contratos" },
+  { href: "/",           label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/runs",       label: "Histórico",   icon: History },
+  { href: "/hitl",       label: "Aprovações",  icon: ShieldCheck, badge: true },
+  { href: "/watch",      label: "Watch",        icon: Eye },
+  { href: "/certidoes",  label: "Certidões",   icon: FileText },
+  { href: "/contracts",  label: "Contratos",   icon: Award },
 ];
 
 export function NavBar() {
   const pathname = usePathname();
   const { data } = useHITL();
   const { user } = useAuth();
-  const pendingCount = data?.items.length ?? 0;
+  const pendingCount = data?.items.filter((i) => i.status === "pending").length ?? 0;
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-10">
-      <div className="max-w-5xl mx-auto px-4 flex items-center justify-between h-14">
-        <div className="flex items-center gap-6">
-          <span className="font-bold text-blue-600 text-lg">LicitaCerta AI</span>
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm flex items-center gap-1 transition-colors ${
-                pathname === link.href
-                  ? "text-blue-600 font-medium"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              {link.label}
-              {link.href === "/hitl" && pendingCount > 0 && (
-                <span className="bg-orange-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-tight">
-                  {pendingCount}
-                </span>
-              )}
-            </Link>
-          ))}
+    <header className="bg-white border-b sticky top-0 z-20 shadow-sm">
+      <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+        {/* Logo */}
+        <div className="flex items-center gap-2 mr-8">
+          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
+            <FileSearch className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-bold text-gray-900 text-base tracking-tight">
+            Licita<span className="text-blue-600">Certa</span>
+          </span>
         </div>
+
+        {/* Links */}
+        <nav className="flex items-center gap-1 flex-1">
+          {LINKS.map(({ href, label, icon: Icon, badge }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  active
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                }`}
+              >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">{label}</span>
+                {badge && pendingCount > 0 && (
+                  <span className="ml-0.5 bg-orange-500 text-white text-xs font-bold rounded-full px-1.5 py-0.5 leading-none min-w-[18px] text-center">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User */}
         {user && (
           <button
             onClick={signOutUser}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors ml-4"
           >
-            Sair
+            <LogOut className="w-4 h-4" />
+            <span className="hidden sm:inline">Sair</span>
           </button>
         )}
       </div>
-    </nav>
+    </header>
   );
 }
