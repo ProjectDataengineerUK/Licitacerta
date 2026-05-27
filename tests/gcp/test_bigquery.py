@@ -32,6 +32,24 @@ def test_insert_agent_run(writer):
     assert table == "test-project.analytics.agent_runs"
     assert rows[0]["run_id"] == "run-1"
     assert rows[0]["agent_name"] == "compliance"
+    assert rows[0]["currency"] == "BRL"
+
+
+def test_insert_agent_run_explicit_usd(writer):
+    writer.insert_agent_run(
+        run_id="run-usd",
+        tenant_id="tenant-1",
+        agent_name="compliance",
+        model_id="claude-sonnet-4-6",
+        tokens_in=100,
+        tokens_out=200,
+        latency_ms=1500,
+        cost_brl=0.05,
+        currency="USD",
+    )
+    args = writer._client.insert_rows_json.call_args
+    _, rows = args[0]
+    assert rows[0]["currency"] == "USD"
 
 
 def test_insert_agent_run_raises_on_bq_error(writer):

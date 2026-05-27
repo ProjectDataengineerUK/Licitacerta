@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -107,6 +107,22 @@ class AuditEvent(BaseModel):
     latency_ms: int
     tokens_used: int
     timestamp: datetime
+
+
+class ImpugnacaoAction(BaseModel):
+    tipo: Literal["impugnar", "pedir_esclarecimento"]
+    clause_description: str
+    fundamento_legal: str
+    minuta: str
+    prazo_limite: date | None = None
+    valido: bool = True
+
+
+class ImpugnacaoResult(AgentResult):
+    recommendation: Literal["participar", "pedir_esclarecimento", "impugnar", "nao_participar"]
+    actions: list[ImpugnacaoAction] = []
+    risk_after_impugnacao: str | None = None
+    prazo_limite: date | None = None
 
 
 class AgentMetric(BaseModel):

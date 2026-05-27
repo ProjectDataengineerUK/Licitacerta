@@ -32,6 +32,7 @@ class BigQueryWriter:
         tokens_out: int,
         latency_ms: int,
         cost_brl: float,
+        currency: str = "BRL",
         eval_score: float | None = None,
         error: str | None = None,
     ) -> None:
@@ -45,6 +46,7 @@ class BigQueryWriter:
                 "tokens_out": tokens_out,
                 "latency_ms": latency_ms,
                 "cost_brl": cost_brl,
+                "currency": currency,
                 "eval_score": eval_score,
                 "error": error,
                 "created_at": datetime.utcnow().isoformat(),
