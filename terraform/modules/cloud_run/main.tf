@@ -27,6 +27,10 @@ variable "cpu" {
   type    = string
   default = "1"
 }
+variable "allow_public_access" {
+  type    = bool
+  default = false
+}
 
 resource "google_cloud_run_v2_service" "svc" {
   project  = var.project_id
@@ -85,6 +89,15 @@ resource "google_cloud_run_v2_service" "svc" {
       client_version,
     ]
   }
+}
+
+resource "google_cloud_run_v2_service_iam_member" "public_invoker" {
+  count    = var.allow_public_access ? 1 : 0
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.svc.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }
 
 output "service_url" {

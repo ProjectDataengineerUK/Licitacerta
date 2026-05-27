@@ -184,6 +184,7 @@ module "web_service" {
   min_instances         = 0
   max_instances         = 3
   memory                = "512Mi"
+  allow_public_access = true
   env_vars = {
     NEXT_PUBLIC_API_URL              = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
     API_INTERNAL_URL                 = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
