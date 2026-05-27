@@ -28,7 +28,7 @@ export function SubmitForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-zinc-300 mb-1">
           CNPJ da empresa
         </label>
         <input
@@ -36,26 +36,26 @@ export function SubmitForm() {
           value={cnpj}
           onChange={(e) => setCnpj(e.target.value)}
           placeholder="00.000.000/0000-00"
-          className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-zinc-300 mb-1">
           Texto do edital
         </label>
         <textarea
           value={editalRaw}
           onChange={(e) => setEditalRaw(e.target.value)}
           placeholder="Cole aqui o conteúdo do edital..."
-          className="w-full border rounded-lg px-3 py-2 text-sm h-64 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 h-64 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
+        <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2">
           {error}
         </p>
       )}

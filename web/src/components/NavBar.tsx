@@ -17,12 +17,12 @@ import { useAuth } from "@/components/providers";
 import { signOutUser } from "@/lib/firebase";
 
 const LINKS = [
-  { href: "/",           label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/runs",       label: "Histórico",   icon: History },
-  { href: "/hitl",       label: "Aprovações",  icon: ShieldCheck, badge: true },
-  { href: "/watch",      label: "Watch",        icon: Eye },
-  { href: "/certidoes",  label: "Certidões",   icon: FileText },
-  { href: "/contracts",  label: "Contratos",   icon: Award },
+  { href: "/",           label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/runs",       label: "Histórico",  icon: History },
+  { href: "/hitl",       label: "Aprovações", icon: ShieldCheck, badge: true },
+  { href: "/watch",      label: "Watch",       icon: Eye },
+  { href: "/certidoes",  label: "Certidões",  icon: FileText },
+  { href: "/contracts",  label: "Contratos",  icon: Award },
 ];
 
 export function NavBar() {
@@ -32,15 +32,15 @@ export function NavBar() {
   const pendingCount = data?.items.filter((i) => i.status === "pending").length ?? 0;
 
   return (
-    <header className="bg-white border-b sticky top-0 z-20 shadow-sm">
+    <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
         {/* Logo */}
         <div className="flex items-center gap-2 mr-8">
           <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
             <FileSearch className="w-4 h-4 text-white" />
           </div>
-          <span className="font-bold text-gray-900 text-base tracking-tight">
-            Licita<span className="text-blue-600">Certa</span>
+          <span className="font-bold text-zinc-100 text-base tracking-tight">
+            Licita<span className="text-blue-400">Certa</span>
           </span>
         </div>
 
@@ -54,8 +54,8 @@ export function NavBar() {
                 href={href}
                 className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   active
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-blue-600/20 text-blue-400"
+                    : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -74,7 +74,7 @@ export function NavBar() {
         {user && (
           <button
             onClick={signOutUser}
-            className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors ml-4"
+            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-200 transition-colors ml-4"
           >
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Sair</span>

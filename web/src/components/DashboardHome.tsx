@@ -22,10 +22,10 @@ import type { RunStatus } from "@/lib/types";
 
 /* ─── decision meta ─────────────────────────────────────────────────── */
 const DEC = {
-  participar:           { label: "Participar",         color: "#22c55e", bg: "bg-green-50",  text: "text-green-700",  Icon: CheckCircle2 },
-  nao_participar:       { label: "Não Participar",     color: "#ef4444", bg: "bg-red-50",    text: "text-red-700",    Icon: XCircle },
-  pedir_esclarecimento: { label: "Esclarecimento",     color: "#f59e0b", bg: "bg-yellow-50", text: "text-yellow-700", Icon: HelpCircle },
-  impugnar:             { label: "Impugnar",            color: "#f97316", bg: "bg-orange-50", text: "text-orange-700", Icon: Gavel },
+  participar:           { label: "Participar",     color: "#22c55e", ring: "#16a34a", bg: "bg-green-500/10",  text: "text-green-400",  Icon: CheckCircle2 },
+  nao_participar:       { label: "Não Participar", color: "#ef4444", ring: "#dc2626", bg: "bg-red-500/10",    text: "text-red-400",    Icon: XCircle },
+  pedir_esclarecimento: { label: "Esclarecimento", color: "#f59e0b", ring: "#d97706", bg: "bg-amber-500/10",  text: "text-amber-400",  Icon: HelpCircle },
+  impugnar:             { label: "Impugnar",        color: "#f97316", ring: "#ea580c", bg: "bg-orange-500/10", text: "text-orange-400", Icon: Gavel },
 } as const;
 
 /* ─── Donut SVG ──────────────────────────────────────────────────────── */
@@ -33,8 +33,8 @@ function DonutChart({ counts }: { counts: Record<string, number> }) {
   const total = Object.values(counts).reduce((s, n) => s + n, 0);
   if (total === 0) {
     return (
-      <div className="w-32 h-32 rounded-full border-4 border-dashed border-gray-200 flex items-center justify-center">
-        <span className="text-xs text-gray-400">sem dados</span>
+      <div className="w-32 h-32 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center">
+        <span className="text-xs text-zinc-600">sem dados</span>
       </div>
     );
   }
@@ -55,8 +55,7 @@ function DonutChart({ counts }: { counts: Record<string, number> }) {
 
   return (
     <svg width="128" height="128" viewBox="0 0 128 128">
-      {/* track */}
-      <circle cx={cx} cy={cy} r={R} fill="none" stroke="#f1f5f9" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="#27272a" strokeWidth={stroke} />
       {slices.map((s) => (
         <circle
           key={s.key}
@@ -69,8 +68,8 @@ function DonutChart({ counts }: { counts: Record<string, number> }) {
           strokeLinecap="butt"
         />
       ))}
-      <text x={cx} y={cy - 6} textAnchor="middle" className="text-2xl font-bold fill-gray-900" fontSize="22" fontWeight="700">{total}</text>
-      <text x={cx} y={cy + 12} textAnchor="middle" className="fill-gray-400" fontSize="10">análises</text>
+      <text x={cx} y={cy - 6} textAnchor="middle" fill="#f4f4f5" fontSize="22" fontWeight="700">{total}</text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fill="#71717a" fontSize="10">análises</text>
     </svg>
   );
 }
@@ -87,14 +86,14 @@ function KpiCard({
   href?: string;
 }) {
   const inner = (
-    <div className={`bg-white rounded-2xl border p-5 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow ${href ? "cursor-pointer" : ""}`}>
+    <div className={`bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex items-start gap-4 hover:border-zinc-700 transition-colors ${href ? "cursor-pointer" : ""}`}>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${accent}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
-        <p className="text-3xl font-bold text-gray-900 leading-none">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-0.5">{label}</p>
+        <p className="text-3xl font-bold text-zinc-100 leading-none">{value}</p>
+        {sub && <p className="text-xs text-zinc-500 mt-1">{sub}</p>}
       </div>
     </div>
   );
@@ -116,19 +115,19 @@ function RunRow({ run }: { run: RunStatus }) {
             : `/runs/${run.run_id}`
         )
       }
-      className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
+      className="flex items-center gap-3 px-5 py-3.5 hover:bg-zinc-800/60 cursor-pointer transition-colors group"
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${meta ? meta.bg : "bg-gray-100"}`}>
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${meta ? meta.bg : "bg-zinc-800"}`}>
         {meta ? (
           <meta.Icon className={`w-4 h-4 ${meta.text}`} />
         ) : (
-          <Clock className="w-4 h-4 text-gray-400" />
+          <Clock className="w-4 h-4 text-zinc-500" />
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-mono text-gray-600 truncate">{run.edital_id.slice(0, 28)}…</p>
+        <p className="text-sm font-mono text-zinc-300 truncate">{run.edital_id.slice(0, 28)}…</p>
         {run.bid_decision?.summary && (
-          <p className="text-xs text-gray-400 truncate mt-0.5">{run.bid_decision.summary}</p>
+          <p className="text-xs text-zinc-500 truncate mt-0.5">{run.bid_decision.summary}</p>
         )}
       </div>
       {meta && (
@@ -136,7 +135,7 @@ function RunRow({ run }: { run: RunStatus }) {
           {meta.label}
         </span>
       )}
-      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 flex-shrink-0 transition-colors" />
+      <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-zinc-400 flex-shrink-0 transition-colors" />
     </li>
   );
 }
@@ -183,33 +182,33 @@ export function DashboardHome() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 p-7 text-white shadow-lg">
+      <div className="rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-violet-700 p-7 text-white shadow-2xl shadow-blue-900/30">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-blue-200 text-sm font-medium mb-1">Bem-vindo ao</p>
-            <h1 className="text-3xl font-bold">LicitaCerta AI</h1>
+            <h1 className="text-3xl font-bold tracking-tight">LicitaCerta AI</h1>
             <p className="text-blue-200 mt-2 text-sm max-w-md">
-              Plataforma de análise inteligente de editais. {allRuns.length > 0
+              Plataforma de análise inteligente de editais.{" "}
+              {allRuns.length > 0
                 ? `${allRuns.length} análise${allRuns.length > 1 ? "s" : ""} processada${allRuns.length > 1 ? "s" : ""}.`
                 : "Envie seu primeiro edital para começar."}
             </p>
           </div>
           <Link
             href="#nova-analise"
-            className="flex items-center gap-2 bg-white text-blue-700 font-semibold text-sm px-4 py-2.5 rounded-xl hover:bg-blue-50 transition-colors flex-shrink-0 shadow"
+            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors flex-shrink-0 backdrop-blur-sm"
           >
             <Plus className="w-4 h-4" />
             Nova análise
           </Link>
         </div>
 
-        {/* Alerts in hero */}
         {(pendingHITL > 0 || certAlert > 0) && (
           <div className="flex flex-wrap gap-2 mt-5">
             {pendingHITL > 0 && (
               <Link
                 href="/hitl"
-                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors border border-white/10"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-300 animate-pulse" />
                 {pendingHITL} aprovação{pendingHITL > 1 ? "ões" : ""} pendente{pendingHITL > 1 ? "s" : ""}
@@ -218,7 +217,7 @@ export function DashboardHome() {
             {certAlert > 0 && (
               <Link
                 href="/certidoes"
-                className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors border border-white/10"
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-yellow-300" />
                 {certAlert} certidão{certAlert > 1 ? "ões" : ""} em alerta
@@ -235,21 +234,21 @@ export function DashboardHome() {
           value={allRuns.length}
           sub="histórico completo"
           Icon={FileSearch}
-          accent="bg-blue-100 text-blue-600"
+          accent="bg-blue-500/15 text-blue-400"
         />
         <KpiCard
           label="Taxa de participação"
           value={participRate !== null ? `${participRate}%` : "—"}
           sub={decided.length > 0 ? `${decided.length} com decisão` : "sem decisões"}
           Icon={TrendingUp}
-          accent={participRate !== null && participRate >= 50 ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-500"}
+          accent={participRate !== null && participRate >= 50 ? "bg-green-500/15 text-green-400" : "bg-zinc-700 text-zinc-400"}
         />
         <KpiCard
           label="Aprovações pendentes"
           value={pendingHITL}
           sub="aguardando revisão"
           Icon={Clock}
-          accent={pendingHITL > 0 ? "bg-orange-100 text-orange-500" : "bg-gray-100 text-gray-400"}
+          accent={pendingHITL > 0 ? "bg-orange-500/15 text-orange-400" : "bg-zinc-700 text-zinc-400"}
           href={pendingHITL > 0 ? "/hitl" : undefined}
         />
         <KpiCard
@@ -257,16 +256,16 @@ export function DashboardHome() {
           value={certAlert}
           sub="vencidas ou a vencer"
           Icon={AlertTriangle}
-          accent={certAlert > 0 ? "bg-red-100 text-red-500" : "bg-gray-100 text-gray-400"}
+          accent={certAlert > 0 ? "bg-red-500/15 text-red-400" : "bg-zinc-700 text-zinc-400"}
           href={certAlert > 0 ? "/certidoes" : undefined}
         />
       </div>
 
-      {/* Middle grid: donut + recent + form */}
+      {/* Middle grid: donut + recent */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Donut chart */}
-        <div className="bg-white rounded-2xl border shadow-sm p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-5">Distribuição de decisões</h2>
+        <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+          <h2 className="text-sm font-semibold text-zinc-300 mb-5">Distribuição de decisões</h2>
           <div className="flex items-center gap-6">
             <DonutChart counts={decCounts} />
             <div className="space-y-2.5 flex-1">
@@ -276,9 +275,9 @@ export function DashboardHome() {
                 return (
                   <div key={key} className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: meta.color }} />
-                    <span className="text-xs text-gray-600 flex-1 truncate">{meta.label}</span>
-                    <span className="text-xs font-bold text-gray-800">{count}</span>
-                    <span className="text-xs text-gray-400 w-8 text-right">{pct}%</span>
+                    <span className="text-xs text-zinc-400 flex-1 truncate">{meta.label}</span>
+                    <span className="text-xs font-bold text-zinc-200">{count}</span>
+                    <span className="text-xs text-zinc-600 w-8 text-right">{pct}%</span>
                   </div>
                 );
               })}
@@ -287,21 +286,21 @@ export function DashboardHome() {
         </div>
 
         {/* Recent runs */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b">
-            <h2 className="text-sm font-semibold text-gray-700">Análises recentes</h2>
-            <Link href="/runs" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1">
+        <div className="lg:col-span-2 bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+            <h2 className="text-sm font-semibold text-zinc-300">Análises recentes</h2>
+            <Link href="/runs" className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 transition-colors">
               Ver todas <ChevronRight className="w-3 h-3" />
             </Link>
           </div>
           {recent.length === 0 ? (
             <div className="py-14 text-center">
-              <FileSearch className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm">Nenhuma análise ainda.</p>
-              <p className="text-gray-300 text-xs mt-1">Use o formulário abaixo para começar.</p>
+              <FileSearch className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
+              <p className="text-zinc-500 text-sm">Nenhuma análise ainda.</p>
+              <p className="text-zinc-600 text-xs mt-1">Use o formulário abaixo para começar.</p>
             </div>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-zinc-800/60">
               {recent.map((run) => <RunRow key={run.run_id} run={run} />)}
             </ul>
           )}
@@ -309,14 +308,14 @@ export function DashboardHome() {
       </div>
 
       {/* New analysis form */}
-      <div id="nova-analise" className="bg-white rounded-2xl border shadow-sm p-6">
+      <div id="nova-analise" className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
             <Plus className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-semibold text-gray-900">Nova análise de edital</h2>
-            <p className="text-xs text-gray-400">Cole o texto do edital e informe o CNPJ da sua empresa</p>
+            <h2 className="font-semibold text-zinc-100">Nova análise de edital</h2>
+            <p className="text-xs text-zinc-500">Cole o texto do edital e informe o CNPJ da sua empresa</p>
           </div>
         </div>
         <SubmitForm />
