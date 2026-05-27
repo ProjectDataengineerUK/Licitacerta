@@ -88,8 +88,6 @@ def decision_graph_with_mocks():
     mock_bid = MagicMock()
     mock_bid.run.return_value = _make_bid_decision()
     mock_impugnacao = MagicMock()
-    mock_impugnacao.arun = pytest.helpers if False else None  # replaced below
-    import asyncio
     async def _arun(ctx):
         return _make_impugnacao_result()
     mock_impugnacao.arun = _arun
