@@ -7,6 +7,10 @@ import httpx
 
 _BASE = "https://pncp.gov.br/api/consulta/v1"
 
+# Modalidades mais relevantes para PMEs de TI/serviços
+# 6=Pregão Eletrônico, 4=Concorrência Eletrônica, 8=Dispensa, 9=Inexigibilidade
+_MODALIDADES = [6, 4, 8, 9]
+
 
 class PNCPClient:
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
@@ -27,6 +31,7 @@ class PNCPClient:
         self,
         data_inicial: date,
         data_final: date,
+        modalidade: int,
         page: int = 1,
         page_size: int = 50,
     ) -> list[dict]:
@@ -36,6 +41,7 @@ class PNCPClient:
             params={
                 "dataInicial": data_inicial.isoformat(),
                 "dataFinal": data_final.isoformat(),
+                "codigoModalidadeContratacao": modalidade,
                 "pagina": page,
                 "tamanhoPagina": page_size,
             },
@@ -51,28 +57,36 @@ class PNCPClient:
         page_size: int = 50,
     ) -> list[dict]:
         assert self._client is not None, "PNCPClient must be used as async context manager"
-        resp = await self._client.get(
-            f"{_BASE}/contratacoes/publicacao",
-            params={
-                "dataInicial": data_inicial.isoformat(),
-                "dataFinal": data_final.isoformat(),
-                "pagina": 1,
-                "tamanhoPagina": page_size,
-            },
-        )
-        resp.raise_for_status()
-        payload = resp.json()
-        results = list(payload.get("data", []))
-        total = payload.get("totalRegistros", 0)
-        total_pages = math.ceil(total / page_size) if total > page_size else 1
+        results: list[dict] = []
 
-        for page in range(2, total_pages + 1):
+        for modalidade in _MODALIDADES:
             try:
-                page_results = await self.search_publicacoes(
-                    data_inicial, data_final, page, page_size
+                resp = await self._client.get(
+                    f"{_BASE}/contratacoes/publicacao",
+                    params={
+                        "dataInicial": data_inicial.isoformat(),
+                        "dataFinal": data_final.isoformat(),
+                        "codigoModalidadeContratacao": modalidade,
+                        "pagina": 1,
+                        "tamanhoPagina": page_size,
+                    },
                 )
-                results.extend(page_results)
+                resp.raise_for_status()
+                payload = resp.json()
+                results.extend(payload.get("data", []))
+
+                total = payload.get("totalRegistros", 0)
+                total_pages = math.ceil(total / page_size) if total > page_size else 1
+
+                for page in range(2, total_pages + 1):
+                    try:
+                        page_results = await self.search_publicacoes(
+                            data_inicial, data_final, modalidade, page, page_size
+                        )
+                        results.extend(page_results)
+                    except Exception:
+                        break
             except Exception:
-                break
+                continue
 
         return results
