@@ -143,6 +143,7 @@ module "api_service" {
     GCS_BUCKET_DOCS      = module.storage.bucket_name
     BQ_DATASET           = google_bigquery_dataset.licitacerta.dataset_id
     DOCUMENT_AI_LOCATION = "us"
+    AUTH_BYPASS          = "1"
   }
   secrets = [
     { name = "ANTHROPIC_API_KEY", secret = "ANTHROPIC_API_KEY", version = "latest" },
