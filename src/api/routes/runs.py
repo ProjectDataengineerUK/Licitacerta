@@ -166,7 +166,6 @@ async def get_run_cost(
     store: RunStore = Depends(get_store),
     _auth=Depends(require_role("user", "operator")),
 ):
-    from fastapi import Response
     entry = await store.get(run_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="run not found")

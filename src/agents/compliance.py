@@ -9,14 +9,14 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-logger = logging.getLogger(__name__)
-
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.model_router import ModelTier, get_llm
 from src.config import settings
 from src.observability import get_langfuse_handler
 from src.schemas.results import AgentMetric, ComplianceResult
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.gcp.bigquery import BigQueryWriter
