@@ -1,4 +1,4 @@
-import type { HITLItem, RunCost, RunResult, RunStatus } from "./types";
+import type { Certidao, HITLItem, RunCost, RunResult, RunStatus, WatchConfig } from "./types";
 import { tokenStore } from "./token-store";
 
 const API_URL =
@@ -52,6 +52,29 @@ export const api = {
     }),
 
   listHITL: () => apiFetch<{ items: HITLItem[] }>("/hitl"),
+
+  listWatchConfigs: () => apiFetch<WatchConfig[]>("/watch/configs"),
+  createWatchConfig: (body: { keywords: string[]; cnpj: string }) =>
+    apiFetch<WatchConfig>("/watch/configs", { method: "POST", body: JSON.stringify(body) }),
+  deleteWatchConfig: (id: string) =>
+    apiFetch<void>(`/watch/configs/${id}`, { method: "DELETE" }),
+  triggerWatchPoll: () =>
+    apiFetch<{ status: string }>("/watch/poll", { method: "POST" }),
+
+  listCertidoes: () => apiFetch<{ certidoes: Certidao[] }>("/certidoes"),
+  uploadCertidao: (file: File, tipo: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = tokenStore.get();
+    return fetch(`${API_URL}/certidoes?tipo=${encodeURIComponent(tipo)}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    }).then(async (r) => {
+      if (!r.ok) throw new Error(`${r.status}: ${await r.text().catch(() => r.statusText)}`);
+      return r.json() as Promise<{ id: string; status: string }>;
+    });
+  },
 
   approveHITL: (runId: string, notes: string) =>
     apiFetch<{ decision: string }>(`/hitl/${runId}/approve`, {

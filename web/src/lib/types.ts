@@ -63,6 +63,23 @@ export const SUBGRAPH_STEPS: Record<string, { label: string; order: number }> = 
   subgraph_post_award:         { label: "Pós-vitória",              order: 7 },
 };
 
+export interface WatchConfig {
+  id: string;
+  keywords: string[];
+  cnpj: string;
+  active: boolean;
+  last_polled_at: string | null;
+}
+
+export interface Certidao {
+  id: string;
+  tipo: string;
+  status: "valid" | "expired" | "expiring_soon" | "pending_review";
+  valid_until: string | null;
+  gcs_path: string;
+  created_at: string;
+}
+
 export const TERMINAL_STEPS = new Set([
   "completed",
   "rejected",

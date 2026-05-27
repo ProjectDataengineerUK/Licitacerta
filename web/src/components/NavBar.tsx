@@ -10,6 +10,9 @@ const LINKS = [
   { href: "/", label: "Analisar" },
   { href: "/runs", label: "Histórico" },
   { href: "/hitl", label: "Aprovações" },
+  { href: "/watch", label: "Watch" },
+  { href: "/certidoes", label: "Certidões" },
+  { href: "/contracts", label: "Contratos" },
 ];
 
 export function NavBar() {
