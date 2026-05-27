@@ -27,9 +27,9 @@ export const googleProvider = new GoogleAuthProvider();
 export { onIdTokenChanged, signInWithPopup, signOut };
 
 export async function signInWithGoogle() {
-  return signInWithPopup(auth, googleProvider);
+  return signInWithPopup(auth!, googleProvider);
 }
 
 export async function signOutUser() {
-  return signOut(auth);
+  return signOut(auth!);
 }
