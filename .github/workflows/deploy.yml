@@ -91,6 +91,14 @@ jobs:
           env_vars: |
             CORS_ORIGINS=http://localhost:3000,${{ steps.web-url.outputs.url }}
 
+      - name: Get API URL for web proxy
+        id: api-url
+        run: |
+          URL=$(gcloud run services describe licitacerta-api-dev \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format='value(status.url)')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
       - name: Deploy Web to Cloud Run
         id: deploy-web
         uses: google-github-actions/deploy-cloudrun@v2
@@ -99,6 +107,7 @@ jobs:
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ needs.build-push.outputs.image_tag }}
           env_vars: |
+            API_INTERNAL_URL=${{ steps.api-url.outputs.url }}
             NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
             NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}
             NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
