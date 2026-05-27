@@ -50,7 +50,12 @@ jobs:
       - name: Build and push Web image
         run: |
           IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ steps.meta.outputs.tag }}"
-          docker build -f web/Dockerfile.web -t "$IMAGE" web/
+          docker build -f web/Dockerfile.web \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}" \
+            --build-arg NEXT_PUBLIC_API_URL="${{ secrets.WEB_API_URL }}" \
+            -t "$IMAGE" web/
           docker push "$IMAGE"
 
   deploy-dev:
