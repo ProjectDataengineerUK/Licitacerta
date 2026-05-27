@@ -7,7 +7,9 @@ import {
   signOut,
 } from "firebase/auth";
 
-const bypass = process.env.NEXT_PUBLIC_AUTH_BYPASS === "1";
+const bypass =
+  process.env.NEXT_PUBLIC_AUTH_BYPASS === "1" ||
+  !process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? "bypass",
