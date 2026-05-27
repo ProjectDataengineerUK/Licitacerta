@@ -110,22 +110,11 @@ resource "google_secret_manager_secret" "anthropic_api_key" {
   depends_on = [google_project_service.apis]
 }
 
-# IAM — Service Account da API
-module "iam_api" {
-  source             = "../../modules/iam"
-  project_id         = var.project_id
-  service_account_id = "licitacerta-api-sa"
-  display_name       = "LicitaCerta API SA"
-  roles = [
-    "roles/storage.objectAdmin",
-    "roles/cloudtasks.enqueuer",
-    "roles/pubsub.publisher",
-    "roles/secretmanager.secretAccessor",
-    "roles/cloudtrace.agent",
-    "roles/monitoring.metricWriter",
-    "roles/bigquery.dataEditor",
-    "roles/aiplatform.user",
-  ]
+# IAM — gerenciado via bootstrap (SA e bindings criados fora do CI)
+# O WIF SA de deploy não tem resourcemanager.projects.getIamPolicy.
+data "google_service_account" "api_sa" {
+  account_id = "licitacerta-api-sa"
+  project    = var.project_id
 }
 
 # Storage
@@ -143,7 +132,7 @@ module "api_service" {
   region                = var.region
   service_name          = "licitacerta-api-dev"
   image                 = local.api_image
-  service_account_email = module.iam_api.email
+  service_account_email = data.google_service_account.api_sa.email
   min_instances         = 0
   max_instances         = 5
   memory                = "1Gi"
@@ -167,7 +156,7 @@ module "worker_service" {
   region                = var.region
   service_name          = "licitacerta-worker-dev"
   image                 = local.worker_image
-  service_account_email = module.iam_api.email
+  service_account_email = data.google_service_account.api_sa.email
   min_instances         = 0
   max_instances         = 3
   memory                = "2Gi"
@@ -191,7 +180,7 @@ module "web_service" {
   region                = var.region
   service_name          = "licitacerta-web-dev"
   image                 = local.web_image
-  service_account_email = module.iam_api.email
+  service_account_email = data.google_service_account.api_sa.email
   min_instances         = 0
   max_instances         = 3
   memory                = "512Mi"
