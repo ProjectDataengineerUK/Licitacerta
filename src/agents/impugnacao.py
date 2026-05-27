@@ -171,7 +171,9 @@ class ImpugnacaoAgent:
             return []
 
     @staticmethod
-    def _consolidate_recommendation(actions: list[ImpugnacaoAction]) -> Literal["participar", "pedir_esclarecimento", "impugnar", "nao_participar"]:
+    def _consolidate_recommendation(
+        actions: list[ImpugnacaoAction],
+    ) -> Literal["participar", "pedir_esclarecimento", "impugnar", "nao_participar"]:
         valid_actions = [a for a in actions if a.valido]
         if not valid_actions:
             return "nao_participar" if actions else "participar"
