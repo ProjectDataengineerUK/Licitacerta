@@ -6,6 +6,8 @@ import { NavBar } from "@/components/NavBar";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "LicitaCerta",
   description: "Análise inteligente de editais de licitação",
