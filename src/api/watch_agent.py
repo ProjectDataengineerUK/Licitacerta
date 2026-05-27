@@ -12,7 +12,7 @@ from src.api.store import RunStore
 from src.api.watch_store import WatchStore
 from src.graph.state import initial_state
 
-_INITIAL_LOOKBACK_DAYS = int(os.getenv("WATCH_INITIAL_LOOKBACK_DAYS", "1"))
+_INITIAL_LOOKBACK_DAYS = int(os.getenv("WATCH_INITIAL_LOOKBACK_DAYS", "30"))
 
 logger = logging.getLogger(__name__)
 
