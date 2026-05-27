@@ -83,10 +83,16 @@ export default function ResultPage({ params }: Props) {
         <div className="border rounded-lg p-4 bg-gray-50 text-sm">
           <p className="font-medium text-gray-700 mb-2">Custo da análise</p>
           <div className="flex gap-6 text-xs text-gray-500">
-            <span>Tokens entrada: {cost.total_input_tokens?.toLocaleString("pt-BR")}</span>
-            <span>Tokens saída: {cost.total_output_tokens?.toLocaleString("pt-BR")}</span>
+            <span>
+              Tokens entrada:{" "}
+              {cost.agents.reduce((s, a) => s + a.tokens_in, 0).toLocaleString("pt-BR")}
+            </span>
+            <span>
+              Tokens saída:{" "}
+              {cost.agents.reduce((s, a) => s + a.tokens_out, 0).toLocaleString("pt-BR")}
+            </span>
             <span className="font-semibold text-gray-700">
-              Total: R$ {cost.total_cost_brl?.toFixed(4)}
+              Total: R$ {cost.total_cost_brl.toFixed(4)}
             </span>
           </div>
         </div>
