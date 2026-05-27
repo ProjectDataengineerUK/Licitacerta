@@ -1,11 +1,11 @@
 import type { Certidao, HITLItem, RunCost, RunResult, RunStatus, WatchConfig } from "./types";
 import { tokenStore } from "./token-store";
 
-// No browser: /api-proxy → Next.js rewrites server-side (sem CORS, sem build-arg)
-// No servidor SSR: mesmo path, Next.js resolve internamente
+// No browser: /api/proxy/* → Route Handler server-side (sem CORS, lê API_INTERNAL_URL em runtime)
+// No servidor SSR: direto para o backend
 const API_URL = typeof window === "undefined"
   ? (process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-  : "/api-proxy";
+  : "/api/proxy";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = tokenStore.get();
