@@ -10,6 +10,7 @@ from src.schemas.results import (
     ComplianceResult,
     EligibilityResult,
     HumanApproval,
+    ImpugnacaoResult,
     LegalRegimeResult,
     PricingResult,
     ProposalDraft,
@@ -38,6 +39,7 @@ class TenderState(TypedDict):
     # --- Decisão (Camada 4) ---
     pricing: PricingResult | None
     bid_decision: BidDecision | None
+    impugnacao: ImpugnacaoResult | None
 
     # --- Execução (Camada 5) ---
     proposal_draft: ProposalDraft | None
@@ -66,6 +68,7 @@ def initial_state(edital_id: str, edital_raw: str, company_cnpj: str) -> TenderS
         pricing=None,
         bid_decision=None,
         proposal_draft=None,
+        impugnacao=None,
         current_step="start",
         human_approvals=[],
         errors=[],

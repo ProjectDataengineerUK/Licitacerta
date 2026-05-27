@@ -11,6 +11,7 @@ from src.schemas.results import (
     BlacklistResult,
     ComplianceResult,
     EligibilityResult,
+    ImpugnacaoResult,
     PricingResult,
 )
 from src.schemas.tender import TenderSchema
@@ -70,16 +71,34 @@ def _base_state():
     return state
 
 
+def _make_impugnacao_result(rec: str = "participar") -> ImpugnacaoResult:
+    return ImpugnacaoResult(
+        conclusion="Nenhuma cláusula de alto risco identificada.",
+        confidence=1.0,
+        recommended_action=rec,
+        recommendation=rec,
+        human_decision_required=False,
+    )
+
+
 @pytest.fixture()
 def decision_graph_with_mocks():
     mock_pricing = MagicMock()
     mock_pricing.run.return_value = _make_pricing()
     mock_bid = MagicMock()
     mock_bid.run.return_value = _make_bid_decision()
+    mock_impugnacao = MagicMock()
+    mock_impugnacao.arun = pytest.helpers if False else None  # replaced below
+    import asyncio
+    async def _arun(ctx):
+        return _make_impugnacao_result()
+    mock_impugnacao.arun = _arun
+    mock_impugnacao.get_last_metric.return_value = None
 
     with (
         patch("src.graph.subgraphs.decision.PricingAgent", return_value=mock_pricing),
         patch("src.graph.subgraphs.decision.BidNoBidAgent", return_value=mock_bid),
+        patch("src.graph.subgraphs.decision.ImpugnacaoAgent", return_value=mock_impugnacao),
     ):
         from src.graph.subgraphs.decision import build_decision_subgraph
         graph = build_decision_subgraph()
@@ -94,7 +113,8 @@ async def test_decision_happy_path(decision_graph_with_mocks):
     assert result["pricing"].recommended_price == Decimal("97560.98")
     assert result["bid_decision"].recommendation == "participar"
     assert result["bid_decision"].risk_level == "low"
-    assert len(result["audit_log"]) == 2
+    assert len(result["audit_log"]) == 3
+    assert result["impugnacao"] is not None
     assert result["errors"] == []
 
 
@@ -125,7 +145,7 @@ async def test_decision_audit_log_order(decision_graph_with_mocks):
     result = await graph.ainvoke(_base_state())
 
     agents = [e.agent for e in result["audit_log"]]
-    assert agents == ["pricing", "bid_no_bid"]
+    assert agents == ["pricing", "bid_no_bid", "impugnacao"]
 
 
 async def test_decision_context_minimum(decision_graph_with_mocks):
