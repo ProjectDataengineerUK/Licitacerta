@@ -50,11 +50,14 @@ jobs:
       - name: Build and push Web image
         run: |
           IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ steps.meta.outputs.tag }}"
+          API_URL=$(gcloud run services describe licitacerta-api-dev \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format='value(status.url)')
           docker build -f web/Dockerfile.web \
             --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ secrets.FIREBASE_API_KEY }}" \
             --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}" \
             --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.GCP_PROJECT_ID }}" \
-            --build-arg NEXT_PUBLIC_API_URL="${{ secrets.WEB_API_URL }}" \
+            --build-arg NEXT_PUBLIC_API_URL="$API_URL" \
             --build-arg NEXT_PUBLIC_AUTH_BYPASS="${{ vars.NEXT_PUBLIC_AUTH_BYPASS }}" \
             -t "$IMAGE" web/
           docker push "$IMAGE"
@@ -86,8 +89,6 @@ jobs:
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ needs.build-push.outputs.image_tag }}
           env_vars: |
-            NEXT_PUBLIC_API_URL=${{ secrets.WEB_API_URL }}
-            API_INTERNAL_URL=${{ secrets.WEB_API_INTERNAL_URL }}
             NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
             NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}
             NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
