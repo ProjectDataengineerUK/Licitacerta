@@ -9,18 +9,29 @@ const API_URL = typeof window === "undefined"
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = tokenStore.get();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...init?.headers,
-    },
-  });
+  const fullUrl = `${API_URL}${path}`;
+  const method = init?.method ?? "GET";
+
+  let res: Response;
+  try {
+    res = await fetch(fullUrl, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...init?.headers,
+      },
+    });
+  } catch (cause) {
+    const msg = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(`[${method} ${fullUrl}] Sem resposta do servidor: ${msg}`);
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    throw new Error(`${res.status}: ${text}`);
+    throw new Error(`[${method} ${fullUrl}] HTTP ${res.status}: ${text}`);
   }
+
   return res.json() as Promise<T>;
 }
 
