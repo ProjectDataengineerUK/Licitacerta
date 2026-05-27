@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -171,7 +171,7 @@ class ImpugnacaoAgent:
             return []
 
     @staticmethod
-    def _consolidate_recommendation(actions: list[ImpugnacaoAction]) -> str:
+    def _consolidate_recommendation(actions: list[ImpugnacaoAction]) -> Literal["participar", "pedir_esclarecimento", "impugnar", "nao_participar"]:
         valid_actions = [a for a in actions if a.valido]
         if not valid_actions:
             return "nao_participar" if actions else "participar"
