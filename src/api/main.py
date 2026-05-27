@@ -52,11 +52,21 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    from fastapi.middleware.cors import CORSMiddleware
+
     from src.api.middleware.auth import FirebaseAuthMiddleware
     from src.api.middleware.tenant import TenantContextMiddleware
 
     app = FastAPI(title="LicitaCerta API", version="0.2.0", lifespan=lifespan)
 
+    cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.add_middleware(TenantContextMiddleware)
     app.add_middleware(FirebaseAuthMiddleware)
 
