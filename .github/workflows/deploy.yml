@@ -74,12 +74,22 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SA }}
 
+      - name: Get Web URL for CORS
+        id: web-url
+        run: |
+          URL=$(gcloud run services describe licitacerta-web-dev \
+            --region="${{ secrets.GCP_REGION }}" \
+            --format='value(status.url)' 2>/dev/null || echo "")
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
       - name: Deploy API to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: licitacerta-api-dev
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ needs.build-push.outputs.image_tag }}
+          env_vars: |
+            CORS_ORIGINS=http://localhost:3000,${{ steps.web-url.outputs.url }}
 
       - name: Deploy Web to Cloud Run
         id: deploy-web
