@@ -136,6 +136,7 @@ module "api_service" {
   min_instances         = 0
   max_instances         = 5
   memory                = "1Gi"
+  allow_public_access   = true
   env_vars = {
     GCP_PROJECT_ID       = var.project_id
     GCP_REGION           = var.region
@@ -186,8 +187,7 @@ module "web_service" {
   memory                = "512Mi"
   allow_public_access = true
   env_vars = {
-    NEXT_PUBLIC_API_URL              = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
-    API_INTERNAL_URL                 = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
+    API_INTERNAL_URL                 = module.api_service.service_url
     NEXT_PUBLIC_FIREBASE_PROJECT_ID  = var.project_id
     NEXT_PUBLIC_AUTH_BYPASS          = "1"
   }
