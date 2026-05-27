@@ -34,6 +34,7 @@ locals {
   placeholder_image = "us-docker.pkg.dev/cloudrun/container/hello:latest"
   api_image         = var.image_tag == "placeholder" ? local.placeholder_image : "${local.image_base}/api:${var.image_tag}"
   worker_image      = var.image_tag == "placeholder" ? local.placeholder_image : "${local.image_base}/worker:${var.image_tag}"
+  web_image         = var.image_tag == "placeholder" ? local.placeholder_image : "${local.image_base}/web:${var.image_tag}"
 }
 
 # APIs
@@ -183,6 +184,25 @@ module "worker_service" {
   depends_on = [google_project_service.apis]
 }
 
+# Cloud Run — Web
+module "web_service" {
+  source                = "../../modules/cloud_run"
+  project_id            = var.project_id
+  region                = var.region
+  service_name          = "licitacerta-web-dev"
+  image                 = local.web_image
+  service_account_email = module.iam_api.email
+  min_instances         = 0
+  max_instances         = 3
+  memory                = "512Mi"
+  env_vars = {
+    NEXT_PUBLIC_API_URL              = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
+    API_INTERNAL_URL                 = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID  = var.project_id
+  }
+  depends_on = [google_project_service.apis]
+}
+
 # Outputs
 output "api_url" {
   value = module.api_service.service_url
@@ -190,6 +210,10 @@ output "api_url" {
 
 output "worker_url" {
   value = module.worker_service.service_url
+}
+
+output "web_url" {
+  value = module.web_service.service_url
 }
 
 output "artifact_registry" {

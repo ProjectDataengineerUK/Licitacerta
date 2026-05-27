@@ -47,6 +47,12 @@ jobs:
           docker build -f Dockerfile.worker -t "$IMAGE" .
           docker push "$IMAGE"
 
+      - name: Build and push Web image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ steps.meta.outputs.tag }}"
+          docker build -f web/Dockerfile.web -t "$IMAGE" web/
+          docker push "$IMAGE"
+
   deploy-dev:
     needs: build-push
     runs-on: ubuntu-latest
@@ -65,6 +71,23 @@ jobs:
           service: licitacerta-api-dev
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ needs.build-push.outputs.image_tag }}
+
+      - name: Deploy Web to Cloud Run
+        id: deploy-web
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-web-dev
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ needs.build-push.outputs.image_tag }}
+          env_vars: |
+            NEXT_PUBLIC_API_URL=${{ secrets.WEB_API_URL }}
+            API_INTERNAL_URL=${{ secrets.WEB_API_INTERNAL_URL }}
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+
+      - name: Print Web URL
+        run: echo "Web URL ${{ steps.deploy-web.outputs.url }}"
 
       # Workers são Cloud Run Jobs (ativados por Pub/Sub), não Services HTTP.
       # O deploy do worker image é feito via terraform (cloud_run_v2_job) — não aqui.
