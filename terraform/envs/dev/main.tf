@@ -189,6 +189,7 @@ module "web_service" {
     NEXT_PUBLIC_API_URL              = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
     API_INTERNAL_URL                 = "https://licitacerta-api-dev-${var.project_id}.${var.region}.run.app"
     NEXT_PUBLIC_FIREBASE_PROJECT_ID  = var.project_id
+    NEXT_PUBLIC_AUTH_BYPASS          = "1"
   }
   depends_on = [google_project_service.apis]
 }

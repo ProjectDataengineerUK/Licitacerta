@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const unsubscribe = onIdTokenChanged(auth, async (u) => {
+    const unsubscribe = onIdTokenChanged(auth!, async (u: User | null) => {
       if (u) {
         const token = await u.getIdToken();
         tokenStore.set(token);
