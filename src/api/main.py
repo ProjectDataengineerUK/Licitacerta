@@ -14,6 +14,7 @@ from src.api.routes.certidoes import router as certidoes_router
 from src.api.routes.documents import router as documents_router
 from src.api.routes.hitl import router as hitl_router
 from src.api.routes.runs import router as runs_router
+from src.api.routes.radar import router as radar_router
 from src.api.routes.tenants import router as tenants_router
 from src.api.routes.watch import router as watch_router
 from src.api.store import RunStore
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(certidoes_router)
     app.include_router(hitl_router)
     app.include_router(tenants_router)
+    app.include_router(radar_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
