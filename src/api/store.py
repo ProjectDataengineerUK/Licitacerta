@@ -143,6 +143,7 @@ class RunStore:
             eligibility=_serialize(s.get("eligibility")),
             compliance=_serialize(s.get("compliance")),
             blacklist=_serialize(s.get("blacklist")),
+            impugnacao=_serialize(s.get("impugnacao")),
             proposal_draft=_serialize(s.get("proposal_draft")),
             audit_log=[d for a in s.get("audit_log", []) if (d := _serialize(a)) is not None],
         )
