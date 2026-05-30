@@ -92,6 +92,7 @@ async def _dispatch_alerts(session_factory) -> None:
     if not os.environ.get("GCP_PROJECT_ID"):
         return
     from sqlalchemy import text
+
     from src.gcp.pubsub import PubSubPublisher
 
     publisher = PubSubPublisher.from_env()

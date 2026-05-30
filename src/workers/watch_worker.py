@@ -42,6 +42,7 @@ async def _async_run() -> None:
 
     try:
         from sqlalchemy import text as _text
+
         from src.services.radar_predictor import RadarPredictor
         async with session_factory() as xref_session:
             rows_editais = await xref_session.execute(

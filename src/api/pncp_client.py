@@ -58,6 +58,16 @@ class PNCPClient:
     ) -> list[dict]:
         assert self._client is not None, "PNCPClient must be used as async context manager"
         results: list[dict] = []
+        seen: set[str] = set()
+
+        def _add(editais: list[dict]) -> None:
+            for edital in editais:
+                pncp_id = edital.get("numeroControlePNCP")
+                if pncp_id is not None and pncp_id in seen:
+                    continue
+                if pncp_id is not None:
+                    seen.add(pncp_id)
+                results.append(edital)
 
         for modalidade in _MODALIDADES:
             try:
@@ -73,7 +83,7 @@ class PNCPClient:
                 )
                 resp.raise_for_status()
                 payload = resp.json()
-                results.extend(payload.get("data", []))
+                _add(payload.get("data", []))
 
                 total = payload.get("totalRegistros", 0)
                 total_pages = math.ceil(total / page_size) if total > page_size else 1
@@ -83,7 +93,7 @@ class PNCPClient:
                         page_results = await self.search_publicacoes(
                             data_inicial, data_final, modalidade, page, page_size
                         )
-                        results.extend(page_results)
+                        _add(page_results)
                     except Exception:
                         break
             except Exception:

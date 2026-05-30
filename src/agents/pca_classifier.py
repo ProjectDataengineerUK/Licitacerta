@@ -13,7 +13,8 @@ class PCAClassification(BaseModel):
 
 
 _SYSTEM = """Classifique itens do Plano de Contratações Anual (PCA) brasileiro.
-Para cada item retorne JSON com: segmento_cnae (código CNAE, ex: "6209-1"), categoria ("servico"/"produto"/"obra"), confianca (0.0-1.0).
+Para cada item retorne JSON com: segmento_cnae (código CNAE, ex: "6209-1"),
+categoria ("servico"/"produto"/"obra"), confianca (0.0-1.0).
 Exemplos:
 - "suporte técnico de TI" → segmento_cnae="6209-1", categoria="servico", confianca=0.9
 - "limpeza predial" → segmento_cnae="8121-4", categoria="servico", confianca=0.95
