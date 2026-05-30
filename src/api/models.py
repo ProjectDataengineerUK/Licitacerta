@@ -36,6 +36,7 @@ class RunResult(RunStatus):
     eligibility: dict | None = None
     compliance: dict | None = None
     blacklist: dict | None = None
+    impugnacao: dict | None = None
     proposal_draft: dict | None = None
     audit_log: list[dict] = []
 

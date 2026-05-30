@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from datetime import datetime
 
-from langgraph.graph import StateGraph
+from langgraph.graph import END, StateGraph
 
 from src.agents.bid_no_bid import BidNoBidAgent
 from src.agents.impugnacao import ImpugnacaoAgent
@@ -12,6 +12,22 @@ from src.config import settings
 from src.graph._async_utils import run_in_thread
 from src.graph.state import TenderState
 from src.schemas.results import AgentError, AuditEvent
+
+
+def should_impugnar(state: TenderState) -> bool:
+    bid = state.get("bid_decision")
+    compliance = state.get("compliance")
+    if bid is not None and getattr(bid, "recommendation", None) == "impugnar":
+        return True
+    if bid is not None and getattr(bid, "recommended_action", None) == "impugnar":
+        return True
+    if compliance is not None and compliance.risk_level == "critical":
+        return True
+    if compliance is not None and any(
+        getattr(i, "severity", None) == "blocking" for i in compliance.blocking_issues
+    ):
+        return True
+    return False
 
 
 def build_decision_subgraph():
@@ -127,6 +143,7 @@ def build_decision_subgraph():
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
             })
+            result.human_decision_required = True
             metric = _impugnacao.get_last_metric()
             return {
                 "impugnacao": result,
@@ -165,6 +182,10 @@ def build_decision_subgraph():
     g.add_node("run_impugnacao", run_impugnacao)
     g.set_entry_point("price_calc")
     g.add_edge("price_calc", "bid_no_bid")
-    g.add_edge("bid_no_bid", "run_impugnacao")
-    g.set_finish_point("run_impugnacao")
+    g.add_conditional_edges(
+        "bid_no_bid",
+        lambda state: "run_impugnacao" if should_impugnar(state) else END,
+        {"run_impugnacao": "run_impugnacao", END: END},
+    )
+    g.add_edge("run_impugnacao", END)
     return g.compile()

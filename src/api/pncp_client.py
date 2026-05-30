@@ -58,6 +58,16 @@ class PNCPClient:
     ) -> list[dict]:
         assert self._client is not None, "PNCPClient must be used as async context manager"
         results: list[dict] = []
+        seen: set[str] = set()
+
+        def _add(editais: list[dict]) -> None:
+            for edital in editais:
+                pncp_id = edital.get("numeroControlePNCP")
+                if pncp_id is not None and pncp_id in seen:
+                    continue
+                if pncp_id is not None:
+                    seen.add(pncp_id)
+                results.append(edital)
 
         for modalidade in _MODALIDADES:
             try:
@@ -73,7 +83,7 @@ class PNCPClient:
                 )
                 resp.raise_for_status()
                 payload = resp.json()
-                results.extend(payload.get("data", []))
+                _add(payload.get("data", []))
 
                 total = payload.get("totalRegistros", 0)
                 total_pages = math.ceil(total / page_size) if total > page_size else 1
@@ -83,10 +93,56 @@ class PNCPClient:
                         page_results = await self.search_publicacoes(
                             data_inicial, data_final, modalidade, page, page_size
                         )
-                        results.extend(page_results)
+                        _add(page_results)
                     except Exception:
                         break
             except Exception:
                 continue
 
         return results
+
+    async def fetch_pca_items(
+        self,
+        orgao_cnpj: str,
+        ano: int,
+        page_size: int = 100,
+    ) -> list[dict]:
+        assert self._client is not None
+        _base = "https://pncp.gov.br/api/pncp/v1"
+        results: list[dict] = []
+        page = 1
+        while True:
+            try:
+                resp = await self._client.get(
+                    f"{_base}/orgaos/{orgao_cnpj}/planosContratacoes/itens",
+                    params={"ano": ano, "pagina": page, "tamanhoPagina": page_size},
+                    timeout=20.0,
+                )
+                if resp.status_code == 404:
+                    break
+                resp.raise_for_status()
+                payload = resp.json()
+                items = payload.get("data", [])
+                if not items:
+                    break
+                results.extend(items)
+                if len(items) < page_size:
+                    break
+                page += 1
+            except Exception:
+                break
+        return results
+
+    async def fetch_orgs_with_pca(self, ano: int, page_size: int = 50) -> list[dict]:
+        assert self._client is not None
+        _base = "https://pncp.gov.br/api/pncp/v1"
+        try:
+            resp = await self._client.get(
+                f"{_base}/planosContratacoes",
+                params={"ano": ano, "pagina": 1, "tamanhoPagina": page_size},
+                timeout=20.0,
+            )
+            resp.raise_for_status()
+            return resp.json().get("data", [])
+        except Exception:
+            return []

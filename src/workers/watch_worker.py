@@ -40,6 +40,28 @@ async def _async_run() -> None:
             },
         )
 
+    try:
+        from sqlalchemy import text as _text
+
+        from src.services.radar_predictor import RadarPredictor
+        async with session_factory() as xref_session:
+            rows_editais = await xref_session.execute(
+                _text("""
+                    SELECT numero_controle_pncp, objeto_compra, orgao_cnpj
+                    FROM portal_editals
+                    WHERE status_processamento = 'analisado'
+                      AND created_at >= NOW() - INTERVAL '2 days'
+                    LIMIT 100
+                """)
+            )
+            predictor = RadarPredictor(xref_session)
+            for edital in rows_editais.fetchall():
+                if edital.objeto_compra and edital.orgao_cnpj:
+                    await predictor.cross_reference(edital.objeto_compra, edital.orgao_cnpj)
+            await xref_session.commit()
+    except Exception:
+        pass
+
 
 if __name__ == "__main__":
     run()

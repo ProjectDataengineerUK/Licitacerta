@@ -146,9 +146,9 @@ async def test_at003_lookback_default_is_one_day(monkeypatch):
         from src.api.watch_agent import run_poll_cycle
         await run_poll_cycle(watch_store, run_store, None, pncp_client)
 
-    assert len(captured_dates) == 1
+    assert len(captured_dates) >= 1  # one request per modalidade
     expected = (date.today() - timedelta(days=1)).isoformat()
-    assert captured_dates[0] == expected
+    assert set(captured_dates) == {expected}
 
 
 @pytest.mark.asyncio
@@ -170,9 +170,9 @@ async def test_at002_lookback_configurable(monkeypatch):
         from src.api.watch_agent import run_poll_cycle
         await run_poll_cycle(watch_store, run_store, None, pncp_client)
 
-    assert len(captured_dates) == 1
+    assert len(captured_dates) >= 1  # one request per modalidade
     expected = (date.today() - timedelta(days=7)).isoformat()
-    assert captured_dates[0] == expected
+    assert set(captured_dates) == {expected}
 
 
 # ---------------------------------------------------------------------------

@@ -111,8 +111,8 @@ async def test_decision_happy_path(decision_graph_with_mocks):
     assert result["pricing"].recommended_price == Decimal("97560.98")
     assert result["bid_decision"].recommendation == "participar"
     assert result["bid_decision"].risk_level == "low"
-    assert len(result["audit_log"]) == 3
-    assert result["impugnacao"] is not None
+    assert len(result["audit_log"]) == 2
+    assert result["impugnacao"] is None
     assert result["errors"] == []
 
 
@@ -140,6 +140,16 @@ async def test_decision_pricing_error_continues(decision_graph_with_mocks):
 
 async def test_decision_audit_log_order(decision_graph_with_mocks):
     graph, _, _ = decision_graph_with_mocks
+    result = await graph.ainvoke(_base_state())
+
+    agents = [e.agent for e in result["audit_log"]]
+    assert agents == ["pricing", "bid_no_bid"]
+
+
+async def test_decision_audit_log_order_with_impugnacao(decision_graph_with_mocks):
+    graph, _, mock_bid = decision_graph_with_mocks
+    mock_bid.run.return_value = _make_bid_decision("impugnar")
+
     result = await graph.ainvoke(_base_state())
 
     agents = [e.agent for e in result["audit_log"]]
