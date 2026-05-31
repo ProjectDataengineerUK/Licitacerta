@@ -7,8 +7,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.api.alert_store import AlertStore
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
+from src.api.routes.alerts import router as alerts_router
 from src.api.routes.analyze import router as analyze_router
 from src.api.routes.certidoes import router as certidoes_router
 from src.api.routes.contracts import router as contracts_router
@@ -33,6 +35,7 @@ async def lifespan(app: FastAPI):
     app.state.graph = build_supervisor(checkpointer=checkpointer)
     app.state.store = RunStore()
     app.state.contract_store = ContractStore()
+    app.state.alert_store = AlertStore()
     app.state.watch_store = WatchStore()
     pncp_client = PNCPClient()
     await pncp_client.__aenter__()
@@ -86,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(radar_router)
     app.include_router(dashboard_router)
     app.include_router(contracts_router)
+    app.include_router(alerts_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
