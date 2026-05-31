@@ -56,6 +56,55 @@ class RunCost(BaseModel):
     source: Literal["bigquery", "memory"]
 
 
+PipelineStage = Literal[
+    "analisando",
+    "decidindo",
+    "preparando",
+    "disputando",
+    "ganho",
+    "perdido",
+]
+
+
+class PipelineItem(BaseModel):
+    run_id: str
+    edital_id: str
+    orgao: str = ""
+    objeto: str = ""
+    valor_estimado_brl: float = 0.0
+    stage: PipelineStage
+    bid_score: float | None = None
+    created_at: str | None = None
+    deadline: str | None = None
+
+
+class StageUpdate(BaseModel):
+    stage: PipelineStage
+
+
+class PipelineCounts(BaseModel):
+    analisando: int = 0
+    decidindo: int = 0
+    preparando: int = 0
+    disputando: int = 0
+    ganho_mes: int = 0
+    perdido_mes: int = 0
+
+
+class FinanceSummary(BaseModel):
+    receita_contratada_brl: float = 0.0
+    a_receber_30d_brl: float = 0.0
+    a_receber_60d_brl: float = 0.0
+
+
+class DashboardSummary(BaseModel):
+    pipeline: PipelineCounts
+    financeiro: FinanceSummary
+    taxa_vitoria_pct: float = 0.0
+    alertas_criticos: int = 0
+    alertas_warning: int = 0
+
+
 def _serialize(obj) -> dict | None:
     if obj is None:
         return None

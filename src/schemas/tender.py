@@ -17,6 +17,13 @@ class PageContent(BaseModel):
     is_ocr: bool
 
 
+class TenderVerticalMatch(BaseModel):
+    vertical_detectada: str | None = None
+    score_compatibilidade: float = 0.5  # 0.0 a 1.0
+    alerta_fora_do_setor: bool = False
+    motivo: str | None = None
+
+
 class TenderSchema(BaseModel):
     objeto: str
     orgao: str

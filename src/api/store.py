@@ -34,6 +34,7 @@ class RunEntry:
     snapshot: dict[str, Any]
     task: asyncio.Task | None = None
     last_step: str = ""
+    stage: str | None = None  # explicit Kanban stage override (None → derived from step)
 
 
 class RunStore:
@@ -83,6 +84,17 @@ class RunStore:
         async with self._lock:
             if run_id in self._runs:
                 self._runs[run_id].task = task
+
+    async def set_stage(self, run_id: str, stage: str) -> RunEntry | None:
+        async with self._lock:
+            entry = self._runs.get(run_id)
+            if entry is not None:
+                entry.stage = stage
+            return entry
+
+    async def all_entries(self) -> list[RunEntry]:
+        async with self._lock:
+            return list(self._runs.values())
 
     async def stream_steps(self, run_id: str):
         async with self._lock:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
 from src.api.watch_store import WatchStore
@@ -9,6 +10,16 @@ from src.api.watch_store import WatchStore
 
 def get_store(request: Request) -> RunStore:
     return request.app.state.store
+
+
+def get_contract_store(request: Request) -> ContractStore:
+    return request.app.state.contract_store
+
+
+def get_reajuste_service():
+    from src.services.reajuste import ReajusteService
+
+    return ReajusteService()
 
 
 def get_graph(request: Request):
