@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 
 from src.schemas.results import CapitalGiroResult, CenarioPrecificacao
 from src.services.tributario import calcular_impostos
@@ -36,7 +37,7 @@ def estimar_capital_giro(
     fator = Decimal(prazo_pagamento_dias) / Decimal(ciclo_operacional_dias or 30)
     capital = _q(custos_diretos_brl * fator)
 
-    alerta = "ok"
+    alerta: Literal["ok", "warning", "critical"] = "ok"
     if limite_credito_brl and limite_credito_brl > 0:
         ratio = capital / limite_credito_brl
         if ratio >= Decimal("2.0"):
