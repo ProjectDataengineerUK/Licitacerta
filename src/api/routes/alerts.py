@@ -28,7 +28,7 @@ async def list_alerts(
     store: AlertStore = Depends(get_alert_store),
     _auth=Depends(require_role("user", "operator")),
 ):
-    return await store.list(lido=lido, severidade=severidade, page=page, page_size=page_size)
+    return await store.query(lido=lido, severidade=severidade, page=page, page_size=page_size)
 
 
 @router.post("/alerts/mark-read", response_model=MarkReadResponse)

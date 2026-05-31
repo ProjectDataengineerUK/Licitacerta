@@ -74,7 +74,7 @@ class AlertStore:
         async with self._lock:
             return self._alerts.get(alert_id)
 
-    async def list(
+    async def query(
         self,
         tenant_id: str | None = None,
         lido: bool | None = None,
