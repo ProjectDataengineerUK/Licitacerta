@@ -41,6 +41,7 @@ async def get_checkpointer() -> CheckpointerHandle:
     # Caminho de produção — import lazy
     from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
+    assert db_url is not None  # garantido por _is_real_db acima
     cm = AsyncPostgresSaver.from_conn_string(db_url)
     saver = await cm.__aenter__()
     await saver.setup()  # cria checkpoints / checkpoint_blobs / checkpoint_writes
