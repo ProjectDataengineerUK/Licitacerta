@@ -58,6 +58,44 @@ class PricingResult(AgentResult):
     scenarios: dict[str, Decimal] = {}
 
 
+class ImpostoResult(BaseModel):
+    regime: str
+    aliquota_total_pct: float
+    valor_impostos_brl: Decimal
+    detalhamento: dict[str, Decimal] = {}
+
+
+class BDIResult(BaseModel):
+    bdi_pct: float
+    valor_bdi_brl: Decimal | None = None
+    composicao: dict[str, float] = {}
+
+
+class CapitalGiroResult(BaseModel):
+    capital_necessario_brl: Decimal
+    alerta: Literal["ok", "warning", "critical"] = "ok"
+    limite_credito_brl: Decimal | None = None
+
+
+class CenarioPrecificacao(BaseModel):
+    nome: str
+    valor_proposta_brl: Decimal
+    margem_bruta_pct: float
+    margem_liquida_pct: float
+    margem_liquida_brl: Decimal
+    capital_necessario_brl: Decimal
+    viavel: bool
+
+
+class AdvancedPricingResult(PricingResult):
+    impostos: ImpostoResult | None = None
+    bdi: BDIResult | None = None
+    capital_giro: CapitalGiroResult | None = None
+    cenarios: list[CenarioPrecificacao] = []
+    margem_liquida_brl: Decimal | None = None
+    margem_liquida_pct: float | None = None
+
+
 class BidDecision(AgentResult):
     recommendation: Literal[
         "participar",
