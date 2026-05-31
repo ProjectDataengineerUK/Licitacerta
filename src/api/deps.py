@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import Request
 
 from src.api.alert_store import AlertStore
+from src.api.billing_store import BillingStore
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
@@ -19,6 +20,10 @@ def get_contract_store(request: Request) -> ContractStore:
 
 def get_alert_store(request: Request) -> AlertStore:
     return request.app.state.alert_store
+
+
+def get_billing_store(request: Request) -> BillingStore:
+    return request.app.state.billing_store
 
 
 def get_reajuste_service():
