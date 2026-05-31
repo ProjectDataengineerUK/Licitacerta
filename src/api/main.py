@@ -6,7 +6,6 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from langgraph.checkpoint.memory import MemorySaver
 
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
@@ -24,12 +23,13 @@ from src.api.store import RunStore
 from src.api.watch_agent import watch_poll_loop
 from src.api.watch_store import WatchStore
 from src.config import settings
+from src.graph.checkpoint import get_checkpointer
 from src.graph.supervisor import build_supervisor
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    checkpointer = MemorySaver()
+    checkpointer, close_checkpointer = await get_checkpointer()
     app.state.graph = build_supervisor(checkpointer=checkpointer)
     app.state.store = RunStore()
     app.state.contract_store = ContractStore()
@@ -54,6 +54,7 @@ async def lifespan(app: FastAPI):
     with contextlib.suppress(asyncio.CancelledError):
         await _poll_task
     await pncp_client.__aexit__(None, None, None)
+    await close_checkpointer()
 
 
 def create_app() -> FastAPI:
