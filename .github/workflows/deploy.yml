@@ -115,5 +115,12 @@ jobs:
       - name: Print Web URL
         run: echo "Web URL ${{ steps.deploy-web.outputs.url }}"
 
-      # Workers são Cloud Run Jobs (ativados por Pub/Sub), não Services HTTP.
-      # O deploy do worker image é feito via terraform (cloud_run_v2_job) — não aqui.
+      # Worker é um Cloud Run Service (module "worker_service" → modules/cloud_run),
+      # não um Job. A imagem é gerida aqui (terraform tem ignore_changes na image);
+      # env vars/secrets do worker são preservados por merge no deploy.
+      - name: Deploy Worker to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-worker-dev
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ needs.build-push.outputs.image_tag }}
