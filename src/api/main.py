@@ -18,6 +18,7 @@ from src.api.routes.certidoes import router as certidoes_router
 from src.api.routes.contracts import router as contracts_router
 from src.api.routes.dashboard import router as dashboard_router
 from src.api.routes.documents import router as documents_router
+from src.api.routes.health_score import router as health_score_router
 from src.api.routes.hitl import router as hitl_router
 from src.api.routes.radar import router as radar_router
 from src.api.routes.runs import router as runs_router
@@ -94,6 +95,7 @@ def create_app() -> FastAPI:
     app.include_router(contracts_router)
     app.include_router(alerts_router)
     app.include_router(billing_router)
+    app.include_router(health_score_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():
