@@ -7,6 +7,7 @@ from src.api.billing_store import BillingStore
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
+from src.api.tenant_user_store import TenantUserStore
 from src.api.watch_store import WatchStore
 
 
@@ -42,3 +43,7 @@ def get_watch_store(request: Request) -> WatchStore:
 
 def get_pncp_client(request: Request) -> PNCPClient:
     return request.app.state.pncp_client
+
+
+def get_tenant_user_store(request: Request) -> TenantUserStore:
+    return request.app.state.tenant_user_store

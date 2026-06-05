@@ -1,7 +1,8 @@
 import type {
   Alert, Certidao, ContractAlert, ContractDashboard, DashboardSummary,
-  HealthScore, HITLItem, PipelineItem, PipelineStage, Prediction,
-  RunCost, RunResult, RunStatus, WatchConfig,
+  HealthScore, HITLItem, NotifPrefs, PipelineItem, PipelineStage, Prediction,
+  RunCost, RunResult, RunStatus, TenantInvite, TenantMember, TenantProfile,
+  UsersListOut, WatchConfig,
 } from "./types";
 import { tokenStore } from "./token-store";
 
@@ -115,6 +116,35 @@ export const api = {
   listPredictions: () => apiFetch<Prediction[]>("/radar/predictions"),
 
   getHealthScore: () => apiFetch<HealthScore>("/health-score"),
+
+  // ─── Billing ─────────────────────────────────────────────────────
+  getBillingUsage: () =>
+    apiFetch<{ plan: string; subscription_status: string; usado: number; limite: number | null; reset_em: string | null }>("/billing/usage"),
+  listPlans: () =>
+    apiFetch<{ nome: string; preco_mensal_brl: number; quota_analises_mes: number | null; feature_proposta: boolean }[]>("/billing/plans"),
+
+  // ─── Config / Painel Usuário ──────────────────────────────────────
+  getEmpresa: () => apiFetch<TenantProfile>("/config/empresa"),
+  patchEmpresa: (body: Partial<TenantProfile>) =>
+    apiFetch<TenantProfile>("/config/empresa", { method: "PATCH", body: JSON.stringify(body) }),
+
+  listUsuarios: () => apiFetch<UsersListOut>("/config/usuarios"),
+  convidarUsuario: (body: { email: string; papel: string }) =>
+    apiFetch<TenantInvite>("/config/usuarios/convidar", { method: "POST", body: JSON.stringify(body) }),
+  revogarMembro: (id: string) =>
+    apiFetch<void>(`/config/usuarios/${id}`, { method: "DELETE" }),
+  alterarPapel: (id: string, papel: string) =>
+    apiFetch<TenantMember>(`/config/usuarios/${id}/papel`, { method: "PATCH", body: JSON.stringify({ papel }) }),
+  aceitarConvite: (token: string, user_uid: string) =>
+    apiFetch<TenantMember>("/config/usuarios/aceitar-convite", { method: "POST", body: JSON.stringify({ token, user_uid }) }),
+
+  getNotifPrefs: () => apiFetch<NotifPrefs>("/config/notificacoes"),
+  patchNotifPrefs: (body: Partial<NotifPrefs>) =>
+    apiFetch<NotifPrefs>("/config/notificacoes", { method: "PATCH", body: JSON.stringify(body) }),
+
+  exportDados: () => apiFetch<Record<string, unknown>>("/config/dados/export"),
+  solicitarExclusao: () =>
+    apiFetch<{ status: string; mensagem: string }>("/config/dados", { method: "DELETE" }),
 
   approveHITL: (runId: string, notes: string) =>
     apiFetch<{ decision: string }>(`/hitl/${runId}/approve`, {

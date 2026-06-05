@@ -14,6 +14,7 @@ import {
   Kanban,
   Wallet,
   Bell,
+  Settings,
 } from "lucide-react";
 import { useHITL } from "@/lib/hooks/useHITL";
 import { useAuth } from "@/components/providers";
@@ -29,6 +30,7 @@ const LINKS = [
   { href: "/watch",      label: "Watch",       icon: Eye },
   { href: "/certidoes",  label: "Certidões",  icon: FileText },
   { href: "/contracts",  label: "Contratos",  icon: Award },
+  { href: "/config/empresa", label: "Config", icon: Settings },
 ];
 
 export function NavBar() {
