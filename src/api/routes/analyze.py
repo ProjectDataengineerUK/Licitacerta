@@ -6,7 +6,7 @@ import uuid
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
-from src.api.auth import require_role
+from src.api.auth import require_role, require_user_role
 from src.api.deps import get_graph, get_store
 from src.api.models import AnalyzeRequest
 from src.api.store import RunStore
@@ -22,6 +22,7 @@ async def submit_edital(
     store: RunStore = Depends(get_store),
     graph=Depends(get_graph),
     _auth=Depends(require_role("user", "operator")),
+    _role=Depends(require_user_role("admin", "analista")),
 ):
     run_id = str(uuid.uuid4())
     state = initial_state(

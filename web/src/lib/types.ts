@@ -204,6 +204,50 @@ export const STAGE_ORDER: PipelineStage[] = [
   "analisando", "decidindo", "preparando", "disputando", "ganho", "perdido",
 ];
 
+/* ─── Painel Usuário ─────────────────────────────────────────────────────── */
+
+export type UserRole = "admin" | "analista" | "visualizador";
+
+export interface TenantMember {
+  id: string;
+  user_uid: string;
+  email: string;
+  nome: string | null;
+  papel: UserRole;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface TenantInvite {
+  id: string;
+  email: string;
+  papel: UserRole;
+  expires_at: string;
+  accepted_at: string | null;
+}
+
+export interface TenantProfile {
+  id: string;
+  name: string;
+  cnpj: string;
+  vertical: string | null;
+  segmentos: string[];
+  ufs_interesse: string[];
+  regime_tributario: "simples" | "lucro_presumido" | "lucro_real";
+}
+
+export interface NotifPrefs {
+  email_enabled: boolean;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string | null;
+  tipos_habilitados: string[];
+}
+
+export interface UsersListOut {
+  members: TenantMember[];
+  invites: TenantInvite[];
+}
+
 export const TERMINAL_STEPS = new Set([
   "completed",
   "rejected",
