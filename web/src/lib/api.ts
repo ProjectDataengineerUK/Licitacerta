@@ -1,4 +1,8 @@
-import type { Certidao, HITLItem, RunCost, RunResult, RunStatus, WatchConfig } from "./types";
+import type {
+  Alert, Certidao, ContractAlert, ContractDashboard, DashboardSummary,
+  HealthScore, HITLItem, PipelineItem, PipelineStage, Prediction,
+  RunCost, RunResult, RunStatus, WatchConfig,
+} from "./types";
 import { tokenStore } from "./token-store";
 
 // No browser: /api/proxy/* → Route Handler server-side (sem CORS, lê API_INTERNAL_URL em runtime)
@@ -87,6 +91,30 @@ export const api = {
       return r.json() as Promise<{ id: string; status: string }>;
     });
   },
+
+  // ─── Cockpit V2 ───────────────────────────────────────────────────
+  getDashboardSummary: () => apiFetch<DashboardSummary>("/dashboard/summary"),
+
+  listPipeline: () => apiFetch<PipelineItem[]>("/pipeline"),
+  updateStage: (runId: string, stage: PipelineStage) =>
+    apiFetch<PipelineItem>(`/pipeline/${runId}/stage`, {
+      method: "PATCH",
+      body: JSON.stringify({ stage }),
+    }),
+
+  getContractsDashboard: () => apiFetch<ContractDashboard>("/contracts/dashboard"),
+  listContractAlerts: () => apiFetch<ContractAlert[]>("/contracts/alerts"),
+
+  listAlerts: () => apiFetch<Alert[]>("/alerts"),
+  markAlertsRead: (ids: string[]) =>
+    apiFetch<{ marked: number }>("/alerts/mark-read", {
+      method: "POST",
+      body: JSON.stringify({ ids }),
+    }),
+
+  listPredictions: () => apiFetch<Prediction[]>("/radar/predictions"),
+
+  getHealthScore: () => apiFetch<HealthScore>("/health-score"),
 
   approveHITL: (runId: string, notes: string) =>
     apiFetch<{ decision: string }>(`/hitl/${runId}/approve`, {

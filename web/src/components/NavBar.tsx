@@ -11,13 +11,19 @@ import {
   Award,
   FileText,
   LogOut,
+  Kanban,
+  Wallet,
+  Bell,
 } from "lucide-react";
 import { useHITL } from "@/lib/hooks/useHITL";
 import { useAuth } from "@/components/providers";
 import { signOutUser } from "@/lib/firebase";
 
 const LINKS = [
-  { href: "/",           label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/",           label: "Cockpit",    icon: LayoutDashboard },
+  { href: "/pipeline",   label: "Pipeline",   icon: Kanban },
+  { href: "/financeiro", label: "Financeiro", icon: Wallet },
+  { href: "/alertas",    label: "Alertas",    icon: Bell },
   { href: "/runs",       label: "Histórico",  icon: History },
   { href: "/hitl",       label: "Aprovações", icon: ShieldCheck, badge: true },
   { href: "/watch",      label: "Watch",       icon: Eye },
