@@ -2,10 +2,32 @@
 
 import { useState } from "react";
 
+/** Espelha src/schemas/tender.py::Evidence */
+interface Evidence {
+  document?: string;
+  page: number;
+  excerpt: string;
+}
+
+/** Espelha src/schemas/results.py::Issue */
+interface Issue {
+  description: string;
+  severity?: string;
+  evidence?: Evidence | null;
+}
+
 interface AgentCardProps {
   title: string;
   data: Record<string, unknown>;
   icon?: string;
+}
+
+function EvidenceRef({ ev }: { ev: Evidence }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 font-medium bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 mt-1">
+      📄 ver p.{ev.page} do edital
+    </span>
+  );
 }
 
 export function AgentCard({ title, data, icon }: AgentCardProps) {
@@ -16,6 +38,7 @@ export function AgentCard({ title, data, icon }: AgentCardProps) {
   const blocking = (data.blocking_issues as unknown[]) ?? [];
   const warnings = (data.warnings as string[]) ?? [];
   const riskLevel = data.risk_level as string | undefined;
+  const evidence = (data.evidence as Evidence[] | undefined) ?? [];
 
   const hasIssues = blocking.length > 0;
   const confPct = confidence !== undefined ? Math.round(confidence * 100) : null;
@@ -83,15 +106,16 @@ export function AgentCard({ title, data, icon }: AgentCardProps) {
               <p className="text-xs font-semibold text-red-700 flex items-center gap-1">
                 <span>⛔</span> Issues bloqueantes
               </p>
-              {blocking.map((issue, i) => (
-                <p key={i} className="text-xs text-red-600 pl-4">
-                  {typeof issue === "object" && issue !== null && "description" in issue
-                    ? String((issue as Record<string, unknown>).description)
-                    : typeof issue === "object"
-                    ? JSON.stringify(issue)
-                    : String(issue)}
-                </p>
-              ))}
+              {blocking.map((issue, i) => {
+                const obj = (typeof issue === "object" && issue !== null ? issue : null) as Issue | null;
+                const desc = obj?.description ?? (typeof issue === "object" ? JSON.stringify(issue) : String(issue));
+                return (
+                  <div key={i} className="pl-4">
+                    <p className="text-xs text-red-600">{desc}</p>
+                    {obj?.evidence && <EvidenceRef ev={obj.evidence} />}
+                  </div>
+                );
+              })}
             </div>
           )}
 
@@ -102,6 +126,20 @@ export function AgentCard({ title, data, icon }: AgentCardProps) {
               </p>
               {warnings.map((w, i) => (
                 <p key={i} className="text-xs text-yellow-700 pl-4">{w}</p>
+              ))}
+            </div>
+          )}
+
+          {evidence.length > 0 && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
+              <p className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+                <span>📄</span> Evidências no edital
+              </p>
+              {evidence.map((ev, i) => (
+                <div key={i} className="pl-4">
+                  <p className="text-xs text-gray-600 italic">&ldquo;{ev.excerpt}&rdquo;</p>
+                  <EvidenceRef ev={ev} />
+                </div>
               ))}
             </div>
           )}

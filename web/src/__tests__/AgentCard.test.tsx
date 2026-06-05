@@ -13,7 +13,7 @@ describe("AgentCard", () => {
 
   it("shows issue count badge when blocking issues exist", () => {
     render(<AgentCard title="Compliance" data={withIssues} />);
-    expect(screen.getByText("1 issue")).toBeInTheDocument();
+    expect(screen.getByText("1 bloqueante")).toBeInTheDocument();
   });
 
   it("expands on click to show conclusion", () => {

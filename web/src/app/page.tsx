@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { DashboardHome } from "@/components/DashboardHome";
+import { Cockpit } from "@/components/Cockpit";
 
 export default function HomePage() {
   return (
     <Suspense>
-      <DashboardHome />
+      <Cockpit />
     </Suspense>
   );
 }
