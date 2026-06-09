@@ -16,8 +16,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  plan:
-    if: github.event_name == 'pull_request'
+  # ─────────────────────────────────────────────
+  # DEV — plan on PR, apply on push to main
+  # ─────────────────────────────────────────────
+  plan-dev:
+    name: "Plan dev"
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.changed_files_url, 'terraform')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,8 +41,7 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SA }}
 
-      - name: Terraform init
-        run: terraform init
+      - run: terraform init
 
       - name: Terraform plan
         id: plan
@@ -62,7 +65,8 @@ jobs:
               body: `## Terraform Plan — dev\n\`\`\`\n${truncated}\n\`\`\``
             });
 
-  apply:
+  apply-dev:
+    name: "Apply dev"
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: dev
@@ -84,8 +88,7 @@ jobs:
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
           service_account: ${{ secrets.WIF_SA }}
 
-      - name: Terraform init
-        run: terraform init
+      - run: terraform init
 
       - name: Remove IAM module from state (managed via bootstrap, not CI)
         run: terraform state rm module.iam_api || true
@@ -95,3 +98,104 @@ jobs:
           terraform apply -auto-approve \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="artifact_registry_repo=${{ secrets.AR_REPO }}"
+
+  # ─────────────────────────────────────────────
+  # STAGING — plan on PRs touching staging paths
+  # ─────────────────────────────────────────────
+  plan-staging:
+    name: "Plan staging"
+    if: >
+      github.event_name == 'pull_request' &&
+      contains(toJson(github.event.pull_request.head.repo), 'staging')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/envs/staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Authenticate to GCP (staging)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.STAGING_WIF_PROVIDER }}
+          service_account: ${{ secrets.STAGING_WIF_SA }}
+
+      - run: terraform init
+
+      - name: Terraform plan
+        run: |
+          terraform plan -no-color \
+            -var="project_id=${{ secrets.STAGING_PROJECT_ID }}" \
+            -var="project_number=${{ secrets.STAGING_PROJECT_NUMBER }}" \
+            -var="artifact_registry_repo=${{ secrets.AR_REPO }}" \
+            -var="alloydb_initial_password=REDACTED" \
+            2>&1 | tee plan.txt
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/envs/staging/plan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.slice(-60000) + '\n\n[truncated]' : plan;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan — staging\n\`\`\`\n${truncated}\n\`\`\``
+            });
+
+  # ─────────────────────────────────────────────
+  # PROD — plan-only on PRs touching prod paths
+  # (apply happens via deploy-prod.yml with gate)
+  # ─────────────────────────────────────────────
+  plan-prod:
+    name: "Plan prod (read-only)"
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/envs/prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Authenticate to GCP (prod)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+          service_account: ${{ secrets.PROD_WIF_SA }}
+
+      - run: terraform init
+
+      - name: Terraform plan
+        run: |
+          terraform plan -no-color \
+            -var="project_id=${{ secrets.PROD_PROJECT_ID }}" \
+            -var="project_number=${{ secrets.PROD_PROJECT_NUMBER }}" \
+            -var="artifact_registry_repo=${{ secrets.AR_REPO }}" \
+            -var="alloydb_initial_password=REDACTED" \
+            2>&1 | tee plan.txt
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/envs/prod/plan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.slice(-60000) + '\n\n[truncated]' : plan;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan — prod (read-only; apply via deploy-prod.yml)\n\`\`\`\n${truncated}\n\`\`\``
+            });

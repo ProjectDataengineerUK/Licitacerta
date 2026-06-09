@@ -7,7 +7,8 @@ on:
       - "src/workers/robo_lances_job.py"
       - "src/schemas/robo.py"
       - "Dockerfile.robo"
-      - "requirements.txt"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 env:
   PROJECT_ID: licitacerta-dev
