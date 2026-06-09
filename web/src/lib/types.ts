@@ -256,3 +256,56 @@ export const TERMINAL_STEPS = new Set([
   "understanding_failed",
   "execution_failed",
 ]);
+
+/* ─── Painel Admin ───────────────────────────────────────────────────────── */
+
+export interface AdminDashboard {
+  tenants_ativos: number;
+  runs_hoje: number;
+  runs_semana: number;
+  custo_llm_hoje_brl: number;
+  erros_24h: number;
+  alertas: { nivel: "critical" | "warning" | "info"; mensagem: string }[];
+}
+
+export interface AdminMetricasIA {
+  total_runs: number;
+  taxa_hitl: number;
+  distribuicao_steps: Record<string, number>;
+}
+
+export interface AdminTenant {
+  tenant_id: string;
+  blocked: boolean;
+  runs_total: number;
+  created_at: string;
+}
+
+export interface AdminTenantDetail {
+  tenant_id: string;
+  blocked: boolean;
+  blocked_reason: string | null;
+  runs_total: number;
+  runs_this_month: number;
+  plan: string;
+  features: FeatureFlag[];
+}
+
+export interface FeatureFlag {
+  feature: string;
+  enabled: boolean;
+  override: boolean;
+  expires_at: string | null;
+  note: string | null;
+}
+
+export interface AuditEntry {
+  id: string;
+  admin_email: string;
+  acao: string;
+  entidade_tipo: string | null;
+  entidade_id: string | null;
+  dados_antes: Record<string, unknown> | null;
+  dados_depois: Record<string, unknown> | null;
+  created_at: string;
+}
