@@ -7,11 +7,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from src.api.admin_audit_store import AdminAuditStore
 from src.api.alert_store import AlertStore
 from src.api.billing_store import BillingStore
+from src.api.feature_flag_store import FeatureFlagStore
+from src.api.tenant_state_store import TenantStateStore
 from src.api.tenant_user_store import TenantUserStore
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
+from src.api.routes.admin import router as admin_router
 from src.api.routes.alerts import router as alerts_router
 from src.api.routes.config import router as config_router
 from src.api.routes.analyze import router as analyze_router
@@ -44,6 +48,9 @@ async def lifespan(app: FastAPI):
     app.state.billing_store = BillingStore()
     app.state.tenant_user_store = TenantUserStore()
     app.state.watch_store = WatchStore()
+    app.state.feature_flag_store = FeatureFlagStore()
+    app.state.admin_audit_store = AdminAuditStore()
+    app.state.tenant_state_store = TenantStateStore()
     pncp_client = PNCPClient()
     await pncp_client.__aenter__()
     app.state.pncp_client = pncp_client
@@ -83,9 +90,13 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    from src.api.middleware.admin_auth import AdminAuthMiddleware
+
     app.add_middleware(TenantContextMiddleware)
     app.add_middleware(FirebaseAuthMiddleware)
+    app.add_middleware(AdminAuthMiddleware)
 
+    app.include_router(admin_router)
     app.include_router(analyze_router)
     app.include_router(runs_router)
     app.include_router(watch_router)

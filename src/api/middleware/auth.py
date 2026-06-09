@@ -24,6 +24,18 @@ class FirebaseAuthMiddleware(BaseHTTPMiddleware):
         if path in _PUBLIC_PATHS or path.startswith(_INTERNAL_PREFIX):
             return await call_next(request)
 
+        imp_token = request.headers.get("X-Impersonation-Token", "")
+        if imp_token:
+            store = getattr(request.app.state, "tenant_state_store", None)
+            if store:
+                imp = store.get_impersonation(imp_token)
+                if imp:
+                    request.state.uid = imp.admin_email
+                    request.state.tenant_id = imp.tenant_id
+                    request.state.is_impersonating = True
+                    return await call_next(request)
+            return JSONResponse(status_code=401, content={"detail": "Token de impersonation inválido ou expirado"})
+
         if not os.environ.get("GCP_PROJECT_ID") or os.environ.get("AUTH_BYPASS") == "1":
             request.state.uid = "local-dev"
             request.state.tenant_id = request.headers.get("X-Tenant-Id", "dev")

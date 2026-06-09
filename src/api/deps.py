@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from src.api.admin_audit_store import AdminAuditStore
 from src.api.alert_store import AlertStore
 from src.api.billing_store import BillingStore
 from src.api.contract_store import ContractStore
+from src.api.feature_flag_store import FeatureFlagStore
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
+from src.api.tenant_state_store import TenantStateStore
 from src.api.tenant_user_store import TenantUserStore
 from src.api.watch_store import WatchStore
 
@@ -47,3 +50,15 @@ def get_pncp_client(request: Request) -> PNCPClient:
 
 def get_tenant_user_store(request: Request) -> TenantUserStore:
     return request.app.state.tenant_user_store
+
+
+def get_feature_flag_store(request: Request) -> FeatureFlagStore:
+    return request.app.state.feature_flag_store
+
+
+def get_admin_audit_store(request: Request) -> AdminAuditStore:
+    return request.app.state.admin_audit_store
+
+
+def get_tenant_state_store(request: Request) -> TenantStateStore:
+    return request.app.state.tenant_state_store
