@@ -16,6 +16,14 @@ from src.api.tenant_user_store import TenantUserStore
 from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
 from src.api.routes.admin import router as admin_router
+from src.api.routes.market_intel import router as market_intel_router
+from src.api.routes.estrategia import router as estrategia_router
+from src.api.routes.mentor import router as mentor_router
+from src.api.routes.portfolio import router as portfolio_router
+from src.api.routes.recebiveis import router as recebiveis_router
+from src.api.routes.robo import router as robo_router
+from src.api.routes.onboarding import router as onboarding_router
+from src.api.routes.sentinela import router as sentinela_router
 from src.api.routes.alerts import router as alerts_router
 from src.api.routes.config import router as config_router
 from src.api.routes.analyze import router as analyze_router
@@ -55,6 +63,19 @@ async def lifespan(app: FastAPI):
     await pncp_client.__aenter__()
     app.state.pncp_client = pncp_client
 
+    # MarketIntelService — inicializa pool asyncpg se DATABASE_URL disponível
+    import os as _os
+    _db_url = _os.environ.get("DATABASE_URL")
+    if _db_url:
+        import asyncpg
+        from src.services.market_intel_service import MarketIntelService
+        _pool = await asyncpg.create_pool(_db_url, min_size=1, max_size=5)
+        app.state.market_intel_service = MarketIntelService(_pool)
+        app.state._mi_pool = _pool
+    else:
+        app.state.market_intel_service = None
+        app.state._mi_pool = None
+
     # GCP secret bootstrap — only when running on GCP
     if settings.gcp_project_id:
         from src.gcp.secret_manager import resolve_secrets
@@ -71,6 +92,8 @@ async def lifespan(app: FastAPI):
     with contextlib.suppress(asyncio.CancelledError):
         await _poll_task
     await pncp_client.__aexit__(None, None, None)
+    if app.state._mi_pool:
+        await app.state._mi_pool.close()
     await close_checkpointer()
 
 
@@ -91,10 +114,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     from src.api.middleware.admin_auth import AdminAuthMiddleware
+    from src.api.middleware.behavior_tracker import BehaviorTrackerMiddleware
 
     app.add_middleware(TenantContextMiddleware)
     app.add_middleware(FirebaseAuthMiddleware)
     app.add_middleware(AdminAuthMiddleware)
+    app.add_middleware(BehaviorTrackerMiddleware)
 
     app.include_router(admin_router)
     app.include_router(analyze_router)
@@ -111,6 +136,14 @@ def create_app() -> FastAPI:
     app.include_router(billing_router)
     app.include_router(health_score_router)
     app.include_router(config_router)
+    app.include_router(market_intel_router)
+    app.include_router(estrategia_router)
+    app.include_router(mentor_router)
+    app.include_router(portfolio_router)
+    app.include_router(recebiveis_router)
+    app.include_router(robo_router)
+    app.include_router(onboarding_router)
+    app.include_router(sentinela_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

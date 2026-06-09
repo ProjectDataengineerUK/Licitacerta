@@ -271,7 +271,65 @@ class ComplianceAgent:
         if parsed is None:
             raise ValueError(f"ComplianceAgent structured output failed: {result.get('parsing_error')}")
         parsed.juridical_context_used = juridical_context_used
+        self._apply_supply_chain_sync(parsed, context)
+        self._apply_direcionamento_sync(parsed, context)
         return parsed
+
+    def _apply_direcionamento_sync(self, parsed: ComplianceResult, context: dict) -> None:
+        import asyncio
+        tender = context.get("tender_schema")
+        if not tender:
+            return
+        try:
+            from src.tools.direcionamento_checker import check as dir_check
+            from src.schemas.results import Issue
+            competitive = context.get("competitive_context")
+            loop = asyncio.new_event_loop()
+            d = loop.run_until_complete(dir_check(tender, competitive))
+            loop.close()
+            parsed.direcionamento = d
+            if d.impugnacao_recomendada:
+                parsed.blocking_issues.append(
+                    Issue(
+                        description=f"Sinais de direcionamento (score={d.score:.0f}/100): {d.recomendacao}",
+                        severity="high",
+                    )
+                )
+        except Exception as exc:
+            logger.warning("direcionamento_checker falhou (sync): %s", exc)
+
+    def _apply_supply_chain_sync(self, parsed: ComplianceResult, context: dict) -> None:
+        import asyncio
+        tender = context.get("tender_schema")
+        if not tender or getattr(tender, "tipo_objeto", None) != "produto":
+            return
+        items = getattr(tender, "items", None) or []
+        if not items:
+            return
+        item = items[0]
+        try:
+            from src.tools.supply_chain_checker import check as sc_check
+            from src.schemas.results import Issue
+            loop = asyncio.new_event_loop()
+            sc = loop.run_until_complete(
+                sc_check(
+                    produto_descricao=getattr(item, "descricao", ""),
+                    fabricante_nome=getattr(tender, "fornecedor_nome", "") or "",
+                    fabricante_cnpj=getattr(tender, "fornecedor_cnpj", "") or "",
+                    segmento_cnae=getattr(tender, "segmento_cnae", None),
+                )
+            )
+            loop.close()
+            parsed.supply_chain = sc
+            if sc and sc.bloqueante:
+                parsed.blocking_issues.append(
+                    Issue(
+                        description=f"Fabricante {sc.fabricante_cnpj} reprovado em {sc.categoria}",
+                        severity="blocking",
+                    )
+                )
+        except Exception as exc:
+            logger.warning("supply_chain_checker falhou (sync): %s", exc)
 
     async def arun(self, context: dict) -> ComplianceResult:
         run_id = context.get("run_id") or str(uuid.uuid4())
@@ -299,4 +357,54 @@ class ComplianceAgent:
         if parsed is None:
             raise ValueError(f"ComplianceAgent structured output failed: {result.get('parsing_error')}")
         parsed.juridical_context_used = juridical_context_used
+        await self._apply_supply_chain(parsed, context)
+        await self._apply_direcionamento(parsed, context)
         return parsed
+
+    async def _apply_direcionamento(self, parsed: ComplianceResult, context: dict) -> None:
+        tender = context.get("tender_schema")
+        if not tender:
+            return
+        try:
+            from src.tools.direcionamento_checker import check as dir_check
+            from src.schemas.results import Issue
+            competitive = context.get("competitive_context")
+            d = await dir_check(tender, competitive)
+            parsed.direcionamento = d
+            if d.impugnacao_recomendada:
+                parsed.blocking_issues.append(
+                    Issue(
+                        description=f"Sinais de direcionamento (score={d.score:.0f}/100): {d.recomendacao}",
+                        severity="high",
+                    )
+                )
+        except Exception as exc:
+            logger.warning("direcionamento_checker falhou: %s", exc)
+
+    async def _apply_supply_chain(self, parsed: ComplianceResult, context: dict) -> None:
+        tender = context.get("tender_schema")
+        if not tender or getattr(tender, "tipo_objeto", None) != "produto":
+            return
+        items = getattr(tender, "items", None) or []
+        if not items:
+            return
+        item = items[0]
+        try:
+            from src.tools.supply_chain_checker import check as sc_check
+            from src.schemas.results import Issue
+            sc = await sc_check(
+                produto_descricao=getattr(item, "descricao", ""),
+                fabricante_nome=getattr(tender, "fornecedor_nome", "") or "",
+                fabricante_cnpj=getattr(tender, "fornecedor_cnpj", "") or "",
+                segmento_cnae=getattr(tender, "segmento_cnae", None),
+            )
+            parsed.supply_chain = sc
+            if sc and sc.bloqueante:
+                parsed.blocking_issues.append(
+                    Issue(
+                        description=f"Fabricante {sc.fabricante_cnpj} reprovado em {sc.categoria}",
+                        severity="blocking",
+                    )
+                )
+        except Exception as exc:
+            logger.warning("supply_chain_checker falhou (async): %s", exc)

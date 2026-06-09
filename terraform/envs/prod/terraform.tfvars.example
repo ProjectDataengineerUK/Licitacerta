@@ -1,0 +1,18 @@
+# Copiar para terraform.tfvars e preencher os valores reais
+# NUNCA commitar terraform.tfvars com valores reais
+
+project_id             = "licitacerta-prod"
+project_number         = "123456789000"    # gcloud projects describe licitacerta-prod --format='value(projectNumber)'
+artifact_registry_repo = "licitacerta"
+region                 = "southamerica-east1"
+image_tag              = "placeholder"     # sobrescrito pelo CI
+api_domain             = "api.licitacerta.com.br"
+web_domain             = "app.licitacerta.com.br"
+alloydb_initial_password = "CHANGE_ME_USE_STRONG_PASSWORD"
+
+# Pré-requisitos antes de terraform apply:
+# 1. gcloud projects create licitacerta-prod
+# 2. gsutil mb -p licitacerta-prod -l southamerica-east1 gs://licitacerta-prod-tfstate
+# 3. Criar SA: gcloud iam service-accounts create licitacerta-api-sa --project=licitacerta-prod
+# 4. Criar AR repo: gcloud artifacts repositories create licitacerta --repository-format=docker --location=southamerica-east1 --project=licitacerta-prod
+# 5. Configurar WIF para GitHub Actions

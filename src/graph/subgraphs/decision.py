@@ -6,7 +6,9 @@ from datetime import datetime
 from langgraph.graph import END, StateGraph
 
 from src.agents.bid_no_bid import BidNoBidAgent
+from src.agents.estrategia import EstrategiaAgent
 from src.agents.impugnacao import ImpugnacaoAgent
+from src.agents.market_intel import MarketIntelAgent
 from src.agents.pricing import PricingAgent
 from src.config import settings
 from src.graph._async_utils import run_in_thread
@@ -31,9 +33,63 @@ def should_impugnar(state: TenderState) -> bool:
 
 
 def build_decision_subgraph():
+    _market_intel: MarketIntelAgent | None = None
     _pricing: PricingAgent | None = None
     _bid: BidNoBidAgent | None = None
+    _estrategia: EstrategiaAgent | None = None
     _impugnacao: ImpugnacaoAgent | None = None
+
+    async def run_market_intel(state: TenderState) -> dict:
+        nonlocal _market_intel
+        if _market_intel is None:
+            _market_intel = MarketIntelAgent()
+        t0 = time.time()
+        tender = state.get("tender_schema")
+        try:
+            context = {
+                "run_id": state.get("run_id"),
+                "tenant_id": state.get("tenant_id"),
+                "company_cnpj": state.get("company_cnpj", ""),
+                "segmento_cnae": getattr(tender, "segmento_cnae", None) if tender else None,
+                "item_descricao": getattr(tender, "objeto", "") if tender else "",
+                "catmat_code": getattr(tender, "catmat_code", None) if tender else None,
+                "orgao_cnpj": getattr(tender, "orgao_cnpj", None) if tender else None,
+                "uasg": getattr(tender, "uasg", None) if tender else None,
+                "service": None,  # Service injected via DI quando disponível
+            }
+            result = await _market_intel.arun(context)
+            metric = _market_intel.get_last_metric()
+            return {
+                "competitive_context": result,
+                "audit_log": [
+                    AuditEvent(
+                        subgraph="decision",
+                        agent="market_intel",
+                        action="analyze_market",
+                        input_summary=f"cnpj={state.get('company_cnpj')} segmento={context['segmento_cnae']}",
+                        output_summary=f"data_insuficiente={result.data_insuficiente} resumo={result.resumo[:80]}",
+                        model_used=settings.gemini_flash,
+                        latency_ms=int((time.time() - t0) * 1000),
+                        tokens_used=0,
+                        timestamp=datetime.utcnow(),
+                    )
+                ],
+                "metrics": [metric] if metric else [],
+            }
+        except Exception as e:
+            return {
+                "competitive_context": None,
+                "errors": [
+                    AgentError(
+                        subgraph="decision",
+                        agent="market_intel",
+                        error_type=type(e).__name__,
+                        message=str(e),
+                        timestamp=datetime.utcnow(),
+                        recoverable=True,
+                    )
+                ],
+            }
 
     async def run_pricing(state: TenderState) -> dict:
         nonlocal _pricing
@@ -46,6 +102,7 @@ def build_decision_subgraph():
                 "eligibility": state.get("eligibility"),
                 "compliance": state.get("compliance"),
                 "blacklist": state.get("blacklist"),
+                "competitive_context": state.get("competitive_context"),
                 "company_cnpj": state["company_cnpj"],
                 "run_id": state.get("run_id"),
                 "tenant_id": state.get("tenant_id"),
@@ -131,6 +188,168 @@ def build_decision_subgraph():
                 "current_step": "decided",
             }
 
+    async def run_estrategia(state: TenderState) -> dict:
+        nonlocal _estrategia
+        if _estrategia is None:
+            _estrategia = EstrategiaAgent()
+        t0 = time.time()
+        try:
+            result = await _estrategia.arun({
+                "tender_schema": state.get("tender_schema"),
+                "bid_decision": state.get("bid_decision"),
+                "compliance": state.get("compliance"),
+                "pricing": state.get("pricing"),
+                "competitive_context": state.get("competitive_context"),
+                "run_id": state.get("run_id"),
+                "tenant_id": state.get("tenant_id"),
+            })
+            metric = _estrategia.get_last_metric()
+            return {
+                "estrategia_result": result,
+                "audit_log": [
+                    AuditEvent(
+                        subgraph="decision",
+                        agent="estrategia",
+                        action="generate_strategy",
+                        input_summary=f"bid={getattr(state.get('bid_decision'), 'recommendation', 'N/A')}",
+                        output_summary=f"prob_com_acoes={result.probabilidade_com_acoes_pct:.0f}% acoes={len(result.acoes)}",
+                        model_used=settings.gemini_pro,
+                        latency_ms=int((time.time() - t0) * 1000),
+                        tokens_used=0,
+                        timestamp=datetime.utcnow(),
+                    )
+                ],
+                "metrics": [metric] if metric else [],
+            }
+        except Exception as e:
+            return {
+                "estrategia_result": None,
+                "errors": [
+                    AgentError(
+                        subgraph="decision",
+                        agent="estrategia",
+                        error_type=type(e).__name__,
+                        message=str(e),
+                        timestamp=datetime.utcnow(),
+                        recoverable=True,
+                    )
+                ],
+            }
+
+    async def run_cashflow(state: TenderState) -> dict:
+        t0 = time.time()
+        try:
+            from decimal import Decimal as _Decimal
+            from math import ceil as _ceil
+            from src.services.cashflow_simulator import simular
+
+            tender = state.get("tender_schema")
+            pricing = state.get("pricing")
+
+            valor_mensal = (
+                getattr(pricing, "recommended_price", None)
+                or (getattr(tender, "valor_estimado", None) if tender else None)
+                or _Decimal(0)
+            )
+            custo_mensal = (
+                getattr(pricing, "cost_estimate", None)
+                or valor_mensal * _Decimal("0.8")
+            )
+            prazo_dias = getattr(tender, "prazo_pagamento_dias", 30) if tender else 30
+            duracao = getattr(tender, "duracao_meses", 12) if tender else 12
+            caixa_inicial = _Decimal(
+                state.get("tenant_caixa_inicial_brl") or 0
+            )
+
+            sim = simular(
+                valor_mensal_brl=_Decimal(str(valor_mensal)),
+                prazo_pagamento_dias=int(prazo_dias or 30),
+                custo_mensal_brl=_Decimal(str(custo_mensal)),
+                duracao_meses=int(duracao or 12),
+                caixa_inicial_brl=caixa_inicial,
+            )
+            return {
+                "cashflow_simulation": sim,
+                "audit_log": [
+                    AuditEvent(
+                        subgraph="decision",
+                        agent="cashflow",
+                        action="simulate",
+                        input_summary=f"prazo={prazo_dias}d duracao={duracao}m",
+                        output_summary=f"risco={sim.risco} capital={sim.capital_giro_necessario_brl}",
+                        model_used="deterministic",
+                        latency_ms=int((time.time() - t0) * 1000),
+                        tokens_used=0,
+                        timestamp=datetime.utcnow(),
+                    )
+                ],
+            }
+        except Exception as e:
+            return {
+                "cashflow_simulation": None,
+                "errors": [
+                    AgentError(
+                        subgraph="decision",
+                        agent="cashflow",
+                        error_type=type(e).__name__,
+                        message=str(e),
+                        timestamp=datetime.utcnow(),
+                        recoverable=True,
+                    )
+                ],
+            }
+
+    async def run_pregoeiro(state: TenderState) -> dict:
+        t0 = time.time()
+        tender = state.get("tender_schema")
+        pregoeiro_nome = getattr(tender, "pregoeiro_nome", None) if tender else None
+        if not pregoeiro_nome:
+            return {"pregoeiro_perfil": None}
+        try:
+            import os
+            import asyncpg
+            from src.services.pregoeiro_service import PregoeicoService
+            db_url = os.environ.get("DATABASE_URL")
+            if not db_url:
+                return {"pregoeiro_perfil": None}
+            orgao_cnpj = getattr(tender, "orgao_cnpj", "") or ""
+            conn = await asyncpg.connect(db_url)
+            try:
+                svc = PregoeicoService(conn)
+                perfil = await svc.lookup(nome=pregoeiro_nome, orgao_cnpj=orgao_cnpj)
+            finally:
+                await conn.close()
+            return {
+                "pregoeiro_perfil": perfil,
+                "audit_log": [
+                    AuditEvent(
+                        subgraph="decision",
+                        agent="pregoeiro",
+                        action="lookup_profile",
+                        input_summary=f"nome={pregoeiro_nome} orgao={orgao_cnpj}",
+                        output_summary=f"sessoes={perfil.total_sessoes} indice={perfil.indice_reputacao}",
+                        model_used="deterministic",
+                        latency_ms=int((time.time() - t0) * 1000),
+                        tokens_used=0,
+                        timestamp=datetime.utcnow(),
+                    )
+                ],
+            }
+        except Exception as e:
+            return {
+                "pregoeiro_perfil": None,
+                "errors": [
+                    AgentError(
+                        subgraph="decision",
+                        agent="pregoeiro",
+                        error_type=type(e).__name__,
+                        message=str(e),
+                        timestamp=datetime.utcnow(),
+                        recoverable=True,
+                    )
+                ],
+            }
+
     async def run_impugnacao(state: TenderState) -> dict:
         nonlocal _impugnacao
         if _impugnacao is None:
@@ -177,13 +396,21 @@ def build_decision_subgraph():
             }
 
     g: StateGraph = StateGraph(TenderState)
+    g.add_node("market_intel", run_market_intel)
     g.add_node("price_calc", run_pricing)
     g.add_node("bid_no_bid", run_bid_no_bid)
+    g.add_node("run_estrategia", run_estrategia)
+    g.add_node("run_cashflow", run_cashflow)
+    g.add_node("run_pregoeiro", run_pregoeiro)
     g.add_node("run_impugnacao", run_impugnacao)
-    g.set_entry_point("price_calc")
+    g.set_entry_point("market_intel")
+    g.add_edge("market_intel", "price_calc")
     g.add_edge("price_calc", "bid_no_bid")
+    g.add_edge("bid_no_bid", "run_estrategia")
+    g.add_edge("run_estrategia", "run_cashflow")
+    g.add_edge("run_cashflow", "run_pregoeiro")
     g.add_conditional_edges(
-        "bid_no_bid",
+        "run_pregoeiro",
         lambda state: "run_impugnacao" if should_impugnar(state) else END,
         {"run_impugnacao": "run_impugnacao", END: END},
     )

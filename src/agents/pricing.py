@@ -112,6 +112,21 @@ class PricingAgent:
             f"blacklist: {context.get('blacklist')}",
             f"company_cnpj: {context.get('company_cnpj', '')}",
         ]
+
+        cc = context.get("competitive_context")
+        if cc is not None and not getattr(cc, "data_insuficiente", True):
+            bench = getattr(cc, "price_benchmark", None)
+            if bench and not bench.data_insuficiente and bench.percentil_75:
+                lines.append(
+                    f"benchmark_mercado_p75_brl: {bench.percentil_75} "
+                    f"(média={bench.media_brl}, p25={bench.percentil_25}, amostra={bench.amostra})"
+                )
+            organ = getattr(cc, "organ_score", None)
+            if organ:
+                lines.append(f"organ_score: {organ.score}/100 ({organ.label})")
+            if cc.resumo:
+                lines.append(f"contexto_competitivo: {cc.resumo}")
+
         return [
             SystemMessage(content=SYSTEM_PROMPT),
             HumanMessage(content="\n".join(lines)),

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { NavBar } from "@/components/NavBar";
+import { CoachOverlay } from "@/components/CoachOverlay";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
         <Providers>
           <NavBar />
           <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+          <CoachOverlay />
         </Providers>
       </body>
     </html>

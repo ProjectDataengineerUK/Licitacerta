@@ -4,6 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from src.schemas.direcionamento import DirecionamentoResult  # noqa: F401 — re-exported
+from src.schemas.market import CompetitiveContext  # noqa: F401 — re-exported
+from src.schemas.supply_chain import SupplyChainCheckResult  # noqa: F401 — re-exported
 from src.schemas.tender import Evidence
 
 
@@ -34,6 +37,8 @@ class ComplianceResult(AgentResult):
     restrictive_clauses: list[Issue] = []
     tcu_precedents: list[str] = []
     juridical_context_used: bool = False
+    supply_chain: SupplyChainCheckResult | None = None
+    direcionamento: DirecionamentoResult | None = None
 
 
 class BlacklistResult(BaseModel):

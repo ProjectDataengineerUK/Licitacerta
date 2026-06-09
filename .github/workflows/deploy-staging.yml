@@ -1,0 +1,133 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "terraform/envs/prod/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.STAGING_WIF_PROVIDER }}
+          service_account: ${{ secrets.STAGING_WIF_SA }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image tag
+        id: meta
+        run: echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ steps.meta.outputs.tag }}"
+          docker build -f Dockerfile.api -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build and push Worker image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ steps.meta.outputs.tag }}"
+          docker build -f Dockerfile.worker -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build and push Web image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ steps.meta.outputs.tag }}"
+          docker build -f web/Dockerfile.web \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.STAGING_PROJECT_ID }}" \
+            -t "$IMAGE" web/
+          docker push "$IMAGE"
+
+  terraform-apply:
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: terraform/envs/staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.STAGING_WIF_PROVIDER }}
+          service_account: ${{ secrets.STAGING_WIF_SA }}
+
+      - run: terraform init
+      - run: |
+          terraform apply -auto-approve \
+            -var="project_id=${{ secrets.STAGING_PROJECT_ID }}" \
+            -var="project_number=${{ secrets.STAGING_PROJECT_NUMBER }}" \
+            -var="artifact_registry_repo=${{ secrets.AR_REPO }}" \
+            -var="image_tag=${{ needs.build-push.outputs.image_tag }}" \
+            -var="alloydb_initial_password=${{ secrets.STAGING_ALLOYDB_PASSWORD }}"
+
+  deploy-services:
+    needs: [build-push, terraform-apply]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.STAGING_WIF_PROVIDER }}
+          service_account: ${{ secrets.STAGING_WIF_SA }}
+
+      - name: Deploy API
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-api-staging
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ needs.build-push.outputs.image_tag }}
+
+      - name: Deploy Worker
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-worker-staging
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ needs.build-push.outputs.image_tag }}
+
+      - name: Get API URL
+        id: api-url
+        run: |
+          URL=$(gcloud run services describe licitacerta-api-staging \
+            --region="${{ secrets.GCP_REGION }}" \
+            --project="${{ secrets.STAGING_PROJECT_ID }}" \
+            --format='value(status.url)')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Web
+        id: deploy-web
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-web-staging
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGING_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ needs.build-push.outputs.image_tag }}
+          env_vars: |
+            API_INTERNAL_URL=${{ steps.api-url.outputs.url }}
+
+      - name: Print URLs
+        run: |
+          echo "Staging Web: ${{ steps.deploy-web.outputs.url }}"
+          echo "Staging API: ${{ steps.api-url.outputs.url }}"
