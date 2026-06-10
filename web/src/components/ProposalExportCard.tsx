@@ -16,22 +16,23 @@ export function ProposalExportCard({ runId, hasProposta, plan }: Props) {
   const canExport = PROFISSIONAL_PLANS.includes(plan);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  const { data: versions } = useQuery({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: versions } = useQuery<any[]>({
     queryKey: ["proposal-versions", runId],
-    queryFn: () => api.getProposalVersions(runId),
+    queryFn: () => api.listProposalVersions(runId) as Promise<any[]>,
     enabled: canExport && hasProposta,
   });
 
   async function handleExport(format: "docx" | "pdf") {
     setDownloading(format);
     try {
-      const blob = await api.exportProposal(runId, format);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `proposta_${runId}.${format}`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const res = await api.exportProposal(runId, { formato: format });
+      if (res.download_url) {
+        const a = document.createElement("a");
+        a.href = res.download_url;
+        a.download = `proposta_${runId}.${format}`;
+        a.click();
+      }
     } finally {
       setDownloading(null);
     }

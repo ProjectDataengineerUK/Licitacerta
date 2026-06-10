@@ -17,7 +17,7 @@ export function OutcomeForm({ runId, onClose }: Props) {
 
   const mut = useMutation({
     mutationFn: () =>
-      api.createOutcome(runId, {
+      api.postOutcome(runId, {
         resultado,
         preco_vencedor: precoVencedor || null,
         preco_proposto: precoPropost || null,

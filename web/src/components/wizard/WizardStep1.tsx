@@ -55,13 +55,13 @@ export function WizardStep1({ onNext }: Props) {
       {erro && <p className="text-xs text-red-400">{erro}</p>}
       {lookup && (
         <div className="bg-zinc-800 rounded-xl p-4 space-y-1.5 text-sm">
-          {lookup.razao_social && (
+          {!!lookup.razao_social && (
             <p className="text-zinc-100 font-medium">{String(lookup.razao_social)}</p>
           )}
-          {lookup.cnae_principal && (
+          {!!lookup.cnae_principal && (
             <p className="text-zinc-400">CNAE: {String(lookup.cnae_principal)}</p>
           )}
-          {lookup.municipio && (
+          {!!lookup.municipio && (
             <p className="text-zinc-400">Município: {String(lookup.municipio)}</p>
           )}
           {lookup.source === "fallback" && (

@@ -12,7 +12,8 @@ interface Props {
 export function WizardStep3({ onBack, wizardData }: Props) {
   const [url, setUrl] = useState("");
   const [analisando, setAnalisando] = useState(false);
-  const [resultado, setResultado] = useState<Record<string, unknown> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [resultado, setResultado] = useState<Record<string, any> | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [concluindo, setConcluindo] = useState(false);
   const [concluido, setConcluido] = useState(false);

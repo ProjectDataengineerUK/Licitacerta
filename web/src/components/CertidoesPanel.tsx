@@ -54,8 +54,9 @@ export function CertidoesPanel() {
     setLoading(true);
     try {
       const res = await api.listCertidoes();
-      setItems(res.certidoes);
-      setHabilitado(res.alertas_habilitados);
+      setItems(res.certidoes as unknown as Certidao[]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setHabilitado((res as any).alertas_habilitados ?? false);
       setErro(null);
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Falha ao carregar");
@@ -72,7 +73,7 @@ export function CertidoesPanel() {
     e.preventDefault();
     setSalvando(true);
     try {
-      await api.createCertidao({ cnpj, tipo, validade: validade || null });
+      await api.criarCertidao({ cnpj, tipo, validade: validade || new Date().toISOString().slice(0, 10) });
       setCnpj("");
       setValidade("");
       setTipo(TIPOS[0].value);

@@ -42,6 +42,9 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get: (path: string) => apiFetch<Record<string, any>>(path),
+
   analyze: (edital_raw: string, cnpj: string) =>
     apiFetch<{ run_id: string }>("/analyze", {
       method: "POST",
