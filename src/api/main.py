@@ -29,6 +29,12 @@ from src.api.routes.config import router as config_router
 from src.api.routes.analyze import router as analyze_router
 from src.api.routes.billing import router as billing_router
 from src.api.routes.certidoes import router as certidoes_router
+from src.api.routes.lgpd import router as lgpd_router
+from src.api.routes.ativacao import router as ativacao_router
+from src.api.routes.proposal_export import router as proposal_export_router
+from src.api.routes.outcome import router as outcome_router
+from src.api.routes.digest import router as digest_router
+from src.api.routes.colaboracao import router as colaboracao_router
 from src.api.routes.contracts import router as contracts_router
 from src.api.routes.dashboard import router as dashboard_router
 from src.api.routes.documents import router as documents_router
@@ -116,7 +122,10 @@ def create_app() -> FastAPI:
     from src.api.middleware.admin_auth import AdminAuthMiddleware
     from src.api.middleware.behavior_tracker import BehaviorTrackerMiddleware
 
+    from src.api.middleware.consent import ConsentMiddleware
+
     app.add_middleware(TenantContextMiddleware)
+    app.add_middleware(ConsentMiddleware)
     app.add_middleware(FirebaseAuthMiddleware)
     app.add_middleware(AdminAuthMiddleware)
     app.add_middleware(BehaviorTrackerMiddleware)
@@ -144,6 +153,12 @@ def create_app() -> FastAPI:
     app.include_router(robo_router)
     app.include_router(onboarding_router)
     app.include_router(sentinela_router)
+    app.include_router(lgpd_router)
+    app.include_router(ativacao_router)
+    app.include_router(proposal_export_router)
+    app.include_router(outcome_router)
+    app.include_router(digest_router)
+    app.include_router(colaboracao_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

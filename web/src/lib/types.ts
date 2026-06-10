@@ -309,3 +309,50 @@ export interface AuditEntry {
   dados_depois: Record<string, unknown> | null;
   created_at: string;
 }
+
+/* ─── Sprint A+B ─────────────────────────────────────────────────────────── */
+
+export interface DigestConfig {
+  tenant_id: string;
+  ufs: string[];
+  cnaes: string[];
+  valor_min: number | null;
+  valor_max: number | null;
+  palavras_chave: string[];
+  ativo: boolean;
+  canal_email: boolean;
+  canal_push: boolean;
+}
+
+export interface DigestHistoricoItem {
+  id: string;
+  digest_date: string;
+  itens_enviados: number;
+  abriu_email: boolean;
+  clicks: number;
+  enviado_em: string;
+}
+
+export interface RunComment {
+  id: string;
+  run_id: string;
+  user_uid: string;
+  texto: string;
+  mencoes: string[];
+  deleted: boolean;
+  created_at: string;
+}
+
+export type ApprovalStatus = "rascunho" | "em_revisao" | "aprovado" | "submetido";
+
+export interface ApprovalStatusResult {
+  run_id: string;
+  status: ApprovalStatus;
+  atualizado_por: string | null;
+  atualizado_em: string | null;
+}
+
+export interface StatusTransition {
+  from: ApprovalStatus;
+  to: ApprovalStatus;
+}

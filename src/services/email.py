@@ -15,6 +15,27 @@ _RESEND_URL = "https://api.resend.com/emails"
 _FROM = os.getenv("RESEND_FROM_EMAIL", "LicitaCerta <noreply@licitacerta.com.br>")
 
 
+async def send_digest_email(to: str, html: str, subject: str) -> bool:
+    api_key = os.getenv("RESEND_API_KEY", "")
+    if not api_key:
+        logger.warning("RESEND_API_KEY ausente — digest não enviado para %s", to)
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.post(
+                _RESEND_URL,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={"from": _FROM, "to": [to], "subject": subject, "html": html},
+            )
+        if r.status_code >= 400:
+            logger.error("Resend error %s: %s", r.status_code, r.text)
+            return False
+        return True
+    except Exception as exc:
+        logger.error("Falha ao enviar digest para %s: %s", to, exc)
+        return False
+
+
 async def send_invite_email(to: str, invite_url: str, tenant_name: str) -> bool:
     api_key = os.getenv("RESEND_API_KEY", "")
     if not api_key:

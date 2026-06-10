@@ -1,8 +1,9 @@
 import type {
-  Alert, Certidao, ContractAlert, ContractDashboard, DashboardSummary,
+  Alert, ApprovalStatus, ApprovalStatusResult, Certidao, ContractAlert,
+  ContractDashboard, DashboardSummary, DigestConfig, DigestHistoricoItem,
   HealthScore, HITLItem, NotifPrefs, PipelineItem, PipelineStage, Prediction,
-  RunCost, RunResult, RunStatus, TenantInvite, TenantMember, TenantProfile,
-  UsersListOut, WatchConfig,
+  RunComment, RunCost, RunResult, RunStatus, TenantInvite, TenantMember,
+  TenantProfile, UsersListOut, WatchConfig,
 } from "./types";
 import { tokenStore } from "./token-store";
 
@@ -157,4 +158,74 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ notes }),
     }),
+
+  // ─── LGPD ─────────────────────────────────────────────────────────
+  postConsent: (body: { accepted_tou: boolean; accepted_privacy: boolean }) =>
+    apiFetch<{ status: string; version: string }>("/lgpd/consent", { method: "POST", body: JSON.stringify(body) }),
+  getConsentStatus: () =>
+    apiFetch<{ has_consent: boolean; needs_consent: boolean; version: string }>("/lgpd/consent/status"),
+  revogarLgpd: () => apiFetch<{ status: string; mensagem: string }>("/account/lgpd/revogar", { method: "DELETE" }),
+
+  // ─── Certidões ────────────────────────────────────────────────────
+  listCertidoesV2: () => apiFetch<{ certidoes: Certidao[] }>("/certidoes"),
+  criarCertidao: (body: { cnpj: string; tipo: string; validade: string; url_documento?: string }) =>
+    apiFetch<Certidao>("/certidoes", { method: "POST", body: JSON.stringify(body) }),
+  atualizarCertidao: (id: string, body: { validade: string; url_documento?: string }) =>
+    apiFetch<Certidao>(`/certidoes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  getAlertasCertidoes: () => apiFetch<{ alertas: unknown[] }>("/certidoes/alertas"),
+
+  // ─── Exportação de Proposta ───────────────────────────────────────
+  exportProposal: (runId: string, body: { formato: "docx" | "pdf" | "html" }) =>
+    apiFetch<{ version_id: string; download_url: string | null }>(`/runs/${runId}/proposal/export`, {
+      method: "POST", body: JSON.stringify(body),
+    }),
+  listProposalVersions: (runId: string) =>
+    apiFetch<unknown[]>(`/runs/${runId}/proposal/versions`),
+  getProposalPreview: (runId: string) =>
+    apiFetch<{ html: string }>(`/runs/${runId}/proposal/preview`),
+
+  // ─── Ativação / Onboarding ────────────────────────────────────────
+  getAtivacaoStatus: () => apiFetch<{ ativado: boolean; step: number }>("/ativacao/status"),
+  cnpjLookup: (cnpj: string) => apiFetch<Record<string, unknown>>(`/ativacao/cnpj-lookup?cnpj=${encodeURIComponent(cnpj)}`),
+  updateAtivacaoStep: (step: number, flags: Record<string, unknown>) =>
+    apiFetch<{ step: number }>("/ativacao/step", { method: "POST", body: JSON.stringify({ step, flags }) }),
+  concluirAtivacao: () => apiFetch<{ ativado: boolean }>("/ativacao/concluir", { method: "POST" }),
+  submitEdital: (body: Record<string, unknown>) =>
+    apiFetch<{ run_id: string }>("/analyze", { method: "POST", body: JSON.stringify(body) }),
+  getRunResult: (runId: string) => apiFetch<RunResult>(`/runs/${runId}/results`),
+
+  // ─── Outcome Learning ─────────────────────────────────────────────
+  postOutcome: (runId: string, body: Record<string, unknown>) =>
+    apiFetch<unknown>(`/runs/${runId}/outcome`, { method: "POST", body: JSON.stringify(body) }),
+  getOutcome: (runId: string) => apiFetch<unknown>(`/runs/${runId}/outcome`),
+  getHistorico: (limit = 50) => apiFetch<unknown[]>(`/historico?limit=${limit}`),
+  getHistoricoStats: () => apiFetch<unknown[]>("/historico/stats"),
+  exportHistorico: () => apiFetch<string>("/historico/export"),
+
+  // ─── Digest ───────────────────────────────────────────────────────
+  getDigestConfig: () => apiFetch<DigestConfig>("/digest/config"),
+  putDigestConfig: (body: Partial<DigestConfig>) =>
+    apiFetch<DigestConfig>("/digest/config", { method: "PUT", body: JSON.stringify(body) }),
+  getDigestHistorico: (limit = 30) =>
+    apiFetch<DigestHistoricoItem[]>(`/digest/historico?limit=${limit}`),
+
+  // ─── Colaboração ──────────────────────────────────────────────────
+  colaboracao: {
+    listComments: (runId: string) =>
+      apiFetch<RunComment[]>(`/colaboracao/${encodeURIComponent(runId)}/comentarios`),
+    addComment: (runId: string, texto: string) =>
+      apiFetch<RunComment>(`/colaboracao/${encodeURIComponent(runId)}/comentarios`, {
+        method: "POST", body: JSON.stringify({ texto }),
+      }),
+    deleteComment: (runId: string, commentId: string) =>
+      apiFetch<void>(`/colaboracao/${encodeURIComponent(runId)}/comentarios/${commentId}`, {
+        method: "DELETE",
+      }),
+    getStatus: (runId: string) =>
+      apiFetch<ApprovalStatusResult>(`/colaboracao/${encodeURIComponent(runId)}/status`),
+    updateStatus: (runId: string, status: ApprovalStatus) =>
+      apiFetch<ApprovalStatusResult>(`/colaboracao/${encodeURIComponent(runId)}/status`, {
+        method: "PATCH", body: JSON.stringify({ status }),
+      }),
+  },
 };
