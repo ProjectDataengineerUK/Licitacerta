@@ -10,11 +10,11 @@ import type { TooltipProps } from "recharts";
 import {
   AlertTriangle, ChevronRight, ArrowUpRight, ArrowDownRight,
   Clock, CheckCircle, Plus, Zap, TrendingUp, Wallet, Activity,
-  FileSearch,
+  FileSearch, Radar, BarChart3,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { STAGE_LABELS, STAGE_ORDER } from "@/lib/types";
-import type { DashboardSummary, PipelineStage } from "@/lib/types";
+import type { FinanceiroTrend, PipelineStage } from "@/lib/types";
 
 // ── formatting ────────────────────────────────────────────────────────────────
 
@@ -24,17 +24,16 @@ function brl(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-// ── synthetic chart data (replaced by API when /financeiro/trend exists) ─────
+// ── chart data real — GET /financeiro/trend ──────────────────────────────────
 
-function buildChartData(summary: DashboardSummary | undefined) {
-  const receita = summary?.financeiro.receita_contratada_brl ?? 0;
-  const receber = summary?.financeiro.a_receber_30d_brl ?? 0;
-  const base = receita > 0 ? receita : 180_000;
-  const baseR = receber > 0 ? receber : 60_000;
-  return ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"].map((month, i) => ({
-    month,
-    receita: Math.round(base * (0.42 + i * 0.116)),
-    receber: Math.round(baseR * (0.44 + i * 0.112)),
+const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+function trendToChart(trend: FinanceiroTrend | undefined) {
+  if (!trend) return [];
+  return trend.months.map((m) => ({
+    month: MESES[parseInt(m.mes.slice(5), 10) - 1] ?? m.mes,
+    receita: m.contratado_brl,
+    receber: m.a_receber_brl,
   }));
 }
 
@@ -181,6 +180,18 @@ export function Cockpit() {
     refetchInterval: 15_000,
   });
 
+  const { data: trend } = useQuery({
+    queryKey: ["financeiro-trend"],
+    queryFn: () => api.getFinanceiroTrend(),
+    refetchInterval: 60_000,
+  });
+
+  const { data: predictions } = useQuery({
+    queryKey: ["radar-predictions"],
+    queryFn: () => api.listPredictions(),
+    refetchInterval: 120_000,
+  });
+
   const pipeline = summary?.pipeline;
   const counts: Record<PipelineStage, number> = {
     analisando: pipeline?.analisando ?? 0,
@@ -194,7 +205,9 @@ export function Cockpit() {
   const maxCount = Math.max(...Object.values(counts), 1);
   const criticos = summary?.alertas_criticos ?? 0;
   const pendingHITL = hitlData?.items.filter((i) => i.status === "pending") ?? [];
-  const chartData = buildChartData(summary);
+  const chartData = trendToChart(trend);
+  const hasTrendData = chartData.some((m) => m.receita > 0 || m.receber > 0);
+  const radarAtivo = predictions?.filter((p) => p.status === "ativa" || p.status === "active") ?? predictions ?? [];
 
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long", day: "numeric", month: "long",
@@ -297,6 +310,14 @@ export function Cockpit() {
               Detalhar <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
+          {!hasTrendData && (
+            <div className="h-[196px] flex flex-col items-center justify-center text-center">
+              <BarChart3 className="w-8 h-8 text-zinc-700 mb-2" />
+              <p className="text-sm text-zinc-500">Sem contratos registrados ainda</p>
+              <p className="text-xs text-zinc-600 mt-1">A série real aparece aqui quando o primeiro contrato for cadastrado</p>
+            </div>
+          )}
+          {hasTrendData && (
           <ResponsiveContainer width="100%" height={196}>
             <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <defs>
@@ -334,6 +355,7 @@ export function Cockpit() {
               />
             </AreaChart>
           </ResponsiveContainer>
+          )}
           <div className="flex items-center gap-5 mt-4 pt-4 border-t border-zinc-800/60">
             <div className="flex items-center gap-2">
               <div className="w-3 h-0.5 bg-blue-500 rounded-full" />
@@ -362,6 +384,46 @@ export function Cockpit() {
               <StageRow key={stage} stage={stage} count={counts[stage]} max={maxCount} />
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ── Mercado & Radar ── */}
+      <div className="bg-zinc-900 rounded-2xl ring-1 ring-zinc-800/80 p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-200">Inteligência de mercado</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">Radar de intenção de compra e raio-X competitivo</p>
+          </div>
+          <Link href="/mercado" className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+            Raio-X completo <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0">
+              <Radar className="w-4.5 h-4.5 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-zinc-100">{radarAtivo.length}</p>
+              <p className="text-xs text-zinc-500">editais previstos pelo Radar</p>
+            </div>
+          </div>
+          {radarAtivo.length > 0 ? (
+            <div className="sm:col-span-2 min-w-0">
+              <p className="text-xs text-zinc-500 mb-1">Próxima oportunidade prevista</p>
+              <p className="text-sm text-zinc-200 truncate">
+                {radarAtivo[0].objeto_previsto ?? "Objeto a confirmar"}
+                {radarAtivo[0].orgao_nome ? ` — ${radarAtivo[0].orgao_nome}` : ""}
+              </p>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                {new Date(radarAtivo[0].data_prevista_publicacao).toLocaleDateString("pt-BR")} · confiança {Math.round(radarAtivo[0].confianca_pct)}%
+              </p>
+            </div>
+          ) : (
+            <div className="sm:col-span-2 flex items-center">
+              <p className="text-sm text-zinc-500">Nenhuma predição ativa — o Radar varre os Planos de Contratação Anual (PCA) do PNCP</p>
+            </div>
+          )}
         </div>
       </div>
 

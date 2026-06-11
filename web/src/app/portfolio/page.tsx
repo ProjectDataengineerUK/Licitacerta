@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { tokenStore } from "@/lib/token-store";
 
 interface Oportunidade {
   run_id: string;
@@ -166,9 +167,9 @@ export default function PortfolioPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/portfolio/otimizar", {
+      const res = await fetch("/api/proxy/portfolio/otimizar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenStore.get()}` },
         body: JSON.stringify({
           oportunidades: ops,
           capital_giro_disponivel_brl: parseFloat(capital),

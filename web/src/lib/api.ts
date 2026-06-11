@@ -1,6 +1,7 @@
 import type {
   Alert, ApprovalStatus, ApprovalStatusResult, Certidao, ContractAlert,
   ContractDashboard, DashboardSummary, DigestConfig, DigestHistoricoItem,
+  FinanceiroTrend,
   HealthScore, HITLItem, NotifPrefs, PipelineItem, PipelineStage, Prediction,
   RunComment, RunCost, RunResult, RunStatus, TenantInvite, TenantMember,
   TenantProfile, UsersListOut, WatchConfig,
@@ -118,6 +119,7 @@ export const api = {
     }),
 
   listPredictions: () => apiFetch<Prediction[]>("/radar/predictions"),
+  getFinanceiroTrend: (months = 6) => apiFetch<FinanceiroTrend>(`/financeiro/trend?months=${months}`),
 
   getHealthScore: () => apiFetch<HealthScore>("/health-score"),
 

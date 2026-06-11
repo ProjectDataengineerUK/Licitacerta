@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { tokenStore } from "@/lib/token-store";
 
 interface SimulacaoAntecipacao {
   valor_bruto_brl: number;
@@ -41,9 +42,9 @@ function RecebiveisContent() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/recebiveis/simular", {
+      const res = await fetch("/api/proxy/recebiveis/simular", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenStore.get()}` },
         body: JSON.stringify({
           valor_bruto_brl: parseFloat(valorBruto),
           prazo_dias: parseInt(prazoDias),
@@ -70,9 +71,9 @@ function RecebiveisContent() {
     setSolicitando(true);
     setError("");
     try {
-      const res = await fetch("/api/recebiveis/solicitar", {
+      const res = await fetch("/api/proxy/recebiveis/solicitar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${tokenStore.get()}` },
         body: JSON.stringify({
           run_id: runId || "00000000-0000-0000-0000-000000000000",
           valor_bruto_brl: parseFloat(valorBruto),

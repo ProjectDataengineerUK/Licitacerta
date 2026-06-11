@@ -356,3 +356,14 @@ export interface StatusTransition {
   from: ApprovalStatus;
   to: ApprovalStatus;
 }
+
+export interface FinanceiroTrendMonth {
+  mes: string; // "YYYY-MM"
+  contratado_brl: number;
+  recebido_brl: number;
+  a_receber_brl: number;
+}
+
+export interface FinanceiroTrend {
+  months: FinanceiroTrendMonth[];
+}
