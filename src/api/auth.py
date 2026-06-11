@@ -4,7 +4,7 @@ import hmac
 import os
 from typing import Any
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Header, HTTPException, Request
 
 
 def parse_api_keys(env_val: str) -> dict[str, str]:
@@ -79,3 +79,7 @@ def require_user_role(*roles: str):
         return {"uid": uid, "papel": member.papel}
 
     return _check
+
+
+# Dependência padrão para endpoints que só exigem chamador autenticado.
+require_auth = require_role("user", "operator")

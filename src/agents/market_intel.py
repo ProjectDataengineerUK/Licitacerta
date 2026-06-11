@@ -7,7 +7,7 @@ import threading
 import time
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -53,7 +53,9 @@ class MarketIntelAgent:
         self._last_metric: AgentMetric | None = None
         self._metric_lock = threading.Lock()
 
-    def _set_last_metric(self, *, tokens_in: int, tokens_out: int, cost_brl: float, latency_ms: int, model_id: str) -> None:
+    def _set_last_metric(
+        self, *, tokens_in: int, tokens_out: int, cost_brl: float, latency_ms: int, model_id: str
+    ) -> None:
         with self._metric_lock:
             self._last_metric = AgentMetric(
                 subgraph="decision",
@@ -169,8 +171,12 @@ class MarketIntelAgent:
             except Exception as exc:
                 logger.warning("organ_score failed: %s", exc)
 
+        # Perfil sem vitória nem preço médio não é sinal de mercado (AT-005)
+        has_competitor_signal = any(
+            c.total_vitorias > 0 or c.preco_medio_brl is not None for c in competitors
+        )
         all_insuficiente = (
-            not competitors
+            not has_competitor_signal
             and (benchmark is None or benchmark.data_insuficiente)
             and (organ is None or organ.data_insuficiente)
         )
@@ -210,7 +216,6 @@ class MarketIntelAgent:
         if parsed is None:
             logger.warning("MarketIntelAgent structured output failed — usando dados brutos")
             summary_text = context.get("summary_fallback", "")
-            from src.services.market_intel_service import MarketIntelService as _S
             cnpj_dom = None
             concentracao = False
             if segmento_cnae and service:

@@ -3,9 +3,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
-from src.services.recebiveis_simulator import simular, TAXA_MENSAL_PADRAO
+from src.services.recebiveis_simulator import simular
 
 
 # AT-001: simular(R$50k, 60d) → custo = 50000 × 0.015 × 2 = R$1.500; liquido = R$48.500

@@ -5,7 +5,6 @@ import asyncio
 import logging
 import unicodedata
 from collections import defaultdict
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -90,12 +89,14 @@ async def run_pregoeiro_update(db_url: str | None = None) -> None:
         return
 
     import asyncpg
+
     from src.api.pncp_client import PNCPClient
 
     conn = await asyncpg.connect(url)
     try:
         orgaos = await conn.fetch(
-            "SELECT DISTINCT orgao_cnpj FROM market_contracts WHERE data_contrato > NOW() - INTERVAL '90 days' LIMIT 100"
+            "SELECT DISTINCT orgao_cnpj FROM market_contracts"
+            " WHERE data_contrato > NOW() - INTERVAL '90 days' LIMIT 100"
         )
         orgao_cnpjs = [r["orgao_cnpj"] for r in orgaos]
     except Exception as exc:

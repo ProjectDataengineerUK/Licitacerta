@@ -14,8 +14,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.api.tenant_user_store import TenantInvite, TenantMember, TenantUserStore
-
+from src.api.tenant_user_store import TenantUserStore
 
 # ── TenantUserStore unit tests ───────────────────────────────────────────────
 
@@ -163,6 +162,7 @@ class TestSendInviteEmail:
 @pytest.fixture()
 def client():
     from fastapi.testclient import TestClient
+
     from src.api.main import create_app
     app = create_app()
     with TestClient(app, raise_server_exceptions=True) as c:
@@ -241,10 +241,9 @@ class TestConfigRoutes:
         # create invite
         r = client.post("/config/usuarios/convidar", json={"email": "flow@test.com", "papel": "analista"})
         assert r.status_code == 201
-        token = r.json()  # we need the token from the store
+
         # get token from store via direct lookup
-        from src.api.main import app
-        store = app.state.tenant_user_store
+        store = client.app.state.tenant_user_store
         invite = next((i for i in store._invites.values() if i.email == "flow@test.com"), None)
         assert invite is not None
         # accept
@@ -255,9 +254,8 @@ class TestConfigRoutes:
         assert member["papel"] == "analista"
 
     def test_revogar_membro(self, client):  # AT-006
-        from src.api.main import app
-        store = app.state.tenant_user_store
-        m = store.create_member("dev-tenant", "uid-rev", "rev@test.com", "analista")
+        store = client.app.state.tenant_user_store
+        m = store.create_member("dev", "uid-rev", "rev@test.com", "analista")
         r = client.delete(f"/config/usuarios/{m.id}")
         assert r.status_code == 204
         revoked = store._members[m.id]

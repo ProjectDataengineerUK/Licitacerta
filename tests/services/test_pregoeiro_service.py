@@ -1,16 +1,17 @@
 """Tests for PregoeicoService — AT-001..AT-006."""
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
+from src.schemas.pregoeiro import PregoeiroPerfil
 from src.services.pregoeiro_service import (
     PregoeicoService,
-    _calc_indice,
     _build_alertas,
+    _calc_indice,
     _normalize,
 )
-from src.schemas.pregoeiro import PregoeiroPerfil
 
 
 def _make_row(**kwargs):

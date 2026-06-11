@@ -47,7 +47,10 @@ def _build_alertas(
     if taxa_impugnacao is not None and taxa_impugnacao >= 80:
         alertas.append("Impugnações geralmente aceitas por este pregoeiro (taxa ≥80%)")
     if taxa_desclassificacao is not None and taxa_desclassificacao > media_desclassificacao * 1.5:
-        alertas.append(f"Taxa de desclassificação acima da média ({taxa_desclassificacao:.0f}% vs {media_desclassificacao:.0f}% média)")
+        alertas.append(
+            f"Taxa de desclassificação acima da média"
+            f" ({taxa_desclassificacao:.0f}% vs {media_desclassificacao:.0f}% média)"
+        )
     if tempo_medio is not None and tempo_medio > 8:
         alertas.append(f"Sessões longas em média ({tempo_medio:.1f}h)")
     return alertas

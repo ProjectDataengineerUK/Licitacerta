@@ -45,8 +45,11 @@ async def send_invite_email(to: str, invite_url: str, tenant_name: str) -> bool:
     html = f"""
     <h2>Você foi convidado para {tenant_name} no LicitaCerta</h2>
     <p>Clique no botão abaixo para aceitar o convite e acessar a plataforma:</p>
-    <p><a href="{invite_url}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Aceitar convite</a></p>
-    <p style="color:#6b7280;font-size:12px;">Este link expira em 7 dias. Se você não esperava este convite, ignore este e-mail.</p>
+    <p><a href="{invite_url}"
+       style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;"
+       >Aceitar convite</a></p>
+    <p style="color:#6b7280;font-size:12px;">Este link expira em 7 dias.
+    Se você não esperava este convite, ignore este e-mail.</p>
     """
 
     try:

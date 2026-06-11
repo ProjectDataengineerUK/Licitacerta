@@ -108,7 +108,35 @@ def graph_with_mocks():
     mock_imp.arun = _arun
     mock_imp.get_last_metric.return_value = None
 
+    mock_market = MagicMock()
+
+    async def _mi_arun(ctx):
+        from src.schemas.market import CompetitiveContext
+        return CompetitiveContext(
+            data_insuficiente=True,
+            resumo="Dados de mercado insuficientes para análise competitiva.",
+        )
+
+    mock_market.arun = _mi_arun
+    mock_market.get_last_metric.return_value = None
+
+    mock_estrategia = MagicMock()
+
+    async def _est_arun(ctx):
+        from src.schemas.estrategia import EstrategiaResult
+        return EstrategiaResult(
+            probabilidade_sem_acoes_pct=50.0,
+            probabilidade_com_acoes_pct=65.0,
+            acoes=[],
+            resumo_executivo="Sem ações adicionais.",
+        )
+
+    mock_estrategia.arun = _est_arun
+    mock_estrategia.get_last_metric.return_value = None
+
     with (
+        patch("src.graph.subgraphs.decision.MarketIntelAgent", return_value=mock_market),
+        patch("src.graph.subgraphs.decision.EstrategiaAgent", return_value=mock_estrategia),
         patch("src.graph.subgraphs.decision.PricingAgent", return_value=mock_pricing),
         patch("src.graph.subgraphs.decision.BidNoBidAgent", return_value=mock_bid),
         patch("src.graph.subgraphs.decision.ImpugnacaoAgent", return_value=mock_imp),

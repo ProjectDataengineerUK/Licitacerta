@@ -5,11 +5,8 @@ Pass threshold: >=80% of assertions must pass (enforced by eval-gate.yml).
 """
 from __future__ import annotations
 
-import os
 from typing import Any
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from src.schemas.results import ComplianceResult
 from src.schemas.tender import TenderSchema
@@ -38,8 +35,13 @@ def _mock_llm_response(risk_level: str = "low", human_required: bool = False) ->
         risk_level=risk_level,
         human_decision_required=human_required,
     )
+    payload = {"parsed": result, "raw": MagicMock(response_metadata={"usage": {}})}
+    structured = MagicMock()
+    structured.invoke.return_value = payload
+    structured.ainvoke = structured.invoke
     mock = MagicMock()
-    mock.invoke.return_value = {"parsed": result, "raw": MagicMock(response_metadata={"usage": {}})}
+    mock.with_structured_output.return_value = structured
+    mock.invoke.return_value = payload
     mock.ainvoke = mock.invoke
     return mock
 

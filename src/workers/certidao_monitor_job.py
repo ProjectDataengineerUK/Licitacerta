@@ -122,8 +122,8 @@ class CertidaoMonitorWorker:
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    from src.services.notifications import EmailChannel, NotificationDispatcher
     from src.api.alert_store import NotificationPreferences
+    from src.services.notifications import EmailChannel, NotificationDispatcher
 
     pool = await _build_pool()
     dispatcher = NotificationDispatcher(channels=[EmailChannel()])

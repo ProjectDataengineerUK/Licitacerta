@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from src.api.auth import require_auth
-from src.schemas.market import CompetitorProfile, CompetitiveContext, OrganScore, PriceBenchmark
+from src.schemas.market import CompetitorProfile, OrganScore, PriceBenchmark
 from src.schemas.pregoeiro import PregoeiroPerfil
 from src.services.pregoeiro_service import PregoeicoService
 

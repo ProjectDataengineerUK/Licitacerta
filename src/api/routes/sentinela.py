@@ -75,8 +75,9 @@ async def list_prompt_versions(
     _auth=Depends(require_role("operator", "admin")),
 ):
     try:
-        import asyncpg
         import os
+
+        import asyncpg
         url = os.environ.get("DATABASE_URL")
         if not url:
             return JSONResponse({"versions": [], "error": "DATABASE_URL not set"})
@@ -103,12 +104,11 @@ async def get_run_trace(
     run_id: str,
     _auth=Depends(require_role("user", "operator", "admin")),
 ):
-    from src.api.deps import get_store
-    from fastapi import Request
     # Lightweight: return audit_log + metrics from run store
     try:
-        import asyncpg
         import os
+
+        import asyncpg
         url = os.environ.get("DATABASE_URL")
         if not url:
             return JSONResponse({"error": "DATABASE_URL not set"})

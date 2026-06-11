@@ -1,9 +1,9 @@
 """Tests for MentorAgent — AT-001..AT-006."""
 from __future__ import annotations
 
-import json
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.agents.mentor import MentorAgent, _parse_mentor_response, _resumo_historico
 from src.schemas.mentor import MentorMessage, MentorResponse
@@ -27,7 +27,8 @@ async def test_stream_juridico_has_disclaimer():
         for c in chunks:
             yield c
 
-    agent = MentorAgent()
+    with patch("src.agents.mentor.get_llm", return_value=MagicMock()):
+        agent = MentorAgent()
     with patch.object(agent._llm, "astream", side_effect=fake_astream):
         with patch("src.agents.mentor._parse_mentor_response", return_value=structured):
             collected = []
@@ -44,7 +45,10 @@ async def test_stream_juridico_has_disclaimer():
 
 # AT-004: parse_mentor_response com JSON embebido em texto
 def test_parse_structured_json_embedded():
-    raw = 'Aqui está a resposta: {"resposta": "Sim", "tipo_resposta": "geral", "acoes_sugeridas": [], "evidencias": [], "confianca": 0.8}'
+    raw = (
+        'Aqui está a resposta: {"resposta": "Sim", "tipo_resposta": "geral",'
+        ' "acoes_sugeridas": [], "evidencias": [], "confianca": 0.8}'
+    )
     result = _parse_mentor_response(raw)
     assert result.resposta == "Sim"
     assert result.tipo_resposta == "geral"

@@ -260,4 +260,8 @@ async def solicitar_exclusao(
     _auth=Depends(require_user_role("admin")),
 ):
     tid = _tenant(request)
-    return {"status": "solicitado", "tenant_id": tid, "mensagem": "Solicitação recebida. Processamento em até 30 dias (LGPD Art. 18)."}
+    return {
+        "status": "solicitado",
+        "tenant_id": tid,
+        "mensagem": "Solicitação recebida. Processamento em até 30 dias (LGPD Art. 18).",
+    }

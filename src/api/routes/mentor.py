@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -155,7 +154,7 @@ async def send_message(
             await _save_message(conv_id, "user", body.pergunta, conn)
 
     agent = MentorAgent()
-    t0_total = datetime.utcnow()
+
 
     async def generate():
         import time as _time

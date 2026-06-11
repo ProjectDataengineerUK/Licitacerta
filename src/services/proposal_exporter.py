@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import datetime
 from dataclasses import dataclass
 from decimal import Decimal
@@ -40,8 +41,9 @@ class ProposalExporter:
         vertical: VERTICAL,
         tenant: TenantMeta,
     ) -> BytesIO:
-        from docx import Document
         from pathlib import Path
+
+        from docx import Document
 
         template_path = (
             Path(__file__).parent.parent / "templates" / "proposal" / f"template_{vertical}.docx"

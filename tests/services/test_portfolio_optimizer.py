@@ -3,10 +3,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from src.schemas.portfolio import Oportunidade, PortfolioOtimizacaoInput
-from src.services.portfolio_optimizer import _knapsack_greedy, _calcular_resultado, otimizar
+from src.services.portfolio_optimizer import _calcular_resultado, _knapsack_greedy, otimizar
 
 
 def _op(run_id: str, valor: float, custo: float, prob: float, cap: float = 10.0) -> Oportunidade:

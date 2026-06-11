@@ -2,18 +2,14 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from datetime import datetime
 
-import pytest
-
+from src.contracts.registry import AGENT_CONTRACTS
 from src.schemas.results import (
     AdvancedPricingResult,
     BidDecision,
     ComplianceResult,
     EligibilityResult,
-    ImpugnacaoResult,
 )
-from src.contracts.registry import AGENT_CONTRACTS
 
 
 def _make_compliance() -> ComplianceResult:
@@ -81,7 +77,7 @@ def test_bid_decision_round_trip():
 def test_compliance_compatible_with_bid_no_bid_context():
     compliance = _make_compliance()
     # BidNoBidAgent expects dict with compliance key
-    context = {
+    _context = {
         "compliance": compliance,
         "eligibility": None,
         "pricing": None,

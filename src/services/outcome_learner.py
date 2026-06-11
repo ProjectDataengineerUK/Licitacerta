@@ -1,5 +1,6 @@
 from __future__ import annotations
-from src.agents.model_router import get_llm, ModelTier
+
+from src.agents.model_router import ModelTier, get_llm
 
 _PROMPT = """Você é um analista de licitações. Analise:
 - Score BidNoBid: {score:.2f}

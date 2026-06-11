@@ -1,11 +1,14 @@
 from __future__ import annotations
+
 import logging
 from typing import Any
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
+
+from src.api.middleware.consent import _terms_version
 from src.schemas.lgpd import ConsentBody, ConsentStatus, DeletionRequestOut
 from src.services import lgpd_service
-from src.api.middleware.consent import _terms_version
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["lgpd"])

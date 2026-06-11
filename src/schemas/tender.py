@@ -32,9 +32,9 @@ class TenderSchema(BaseModel):
     data_encerramento: date | None = None
     valor_estimado: Decimal | None = None
     criterio_julgamento: str
-    documentos_exigidos: list[str]
-    exigencias_tecnicas: list[str]
-    penalidades: list[str]
+    documentos_exigidos: list[str] = []
+    exigencias_tecnicas: list[str] = []
+    penalidades: list[str] = []
     garantia_exigida: bool = False
     garantia_percentual: float | None = None
     prazo_entrega_dias: int | None = None

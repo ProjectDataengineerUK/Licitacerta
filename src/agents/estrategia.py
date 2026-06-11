@@ -6,9 +6,8 @@ Curto-circuito: data_insuficiente=True sem bid_decision ou compliance.
 from __future__ import annotations
 
 import logging
-import time
 import threading
-import uuid
+import time
 from datetime import datetime
 from typing import Any
 

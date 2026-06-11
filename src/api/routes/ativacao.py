@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+
 from src.api.auth import require_role
 
 router = APIRouter(prefix="/ativacao", tags=["ativacao"])

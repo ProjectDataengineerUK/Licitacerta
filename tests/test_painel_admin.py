@@ -9,18 +9,16 @@ AT-006 Debug de run retorna logs completos
 """
 from __future__ import annotations
 
-import os
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.admin_audit_store import AdminAuditStore, _MAX_IN_MEMORY
+from src.api.admin_audit_store import _MAX_IN_MEMORY, AdminAuditStore
 from src.api.feature_flag_store import FeatureFlagStore
 from src.api.middleware.admin_auth import AdminAuthMiddleware
 from src.api.tenant_state_store import TenantStateStore
-
 
 # ── FeatureFlagStore unit tests ──────────────────────────────────────────────
 
@@ -291,7 +289,6 @@ def _make_admin_app(monkeypatch) -> tuple[FastAPI, dict]:
     billing_mock = MagicMock()
     billing_mock.get = MagicMock(return_value=None)
 
-    from src.api.routes.admin import router as admin_router
     from src.api.deps import (
         get_admin_audit_store,
         get_billing_store,
@@ -299,6 +296,7 @@ def _make_admin_app(monkeypatch) -> tuple[FastAPI, dict]:
         get_store,
         get_tenant_state_store,
     )
+    from src.api.routes.admin import router as admin_router
 
     app = FastAPI()
     app.add_middleware(AdminAuthMiddleware)

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import datetime
 import logging
 from decimal import Decimal
@@ -103,6 +104,7 @@ async def _save_version(pool, run_id: str, tenant_id: str, formato: str, gcs_pat
 def _gcs_upload(tenant_id: str, run_id: str, version_num: int, ext: str, data: bytes, content_type: str) -> str:
     try:
         import os
+
         from google.cloud import storage
 
         bucket_name = os.environ.get("GCS_BUCKET_DOCS")

@@ -20,7 +20,7 @@ _PATH_DICA_MAP: dict[str, str] = {
 
 
 class BehaviorTrackerMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next: Any) -> Response:  # type: ignore[override]
+    async def dispatch(self, request: Request, call_next) -> Response:  # type: ignore[override]
         response = await call_next(request)
 
         # Only track GET requests with a logged-in tenant

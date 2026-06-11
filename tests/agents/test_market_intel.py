@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -70,7 +70,9 @@ async def test_competitor_data_returned():
 
     svc = AsyncMock()
     svc.competitor_xray.return_value = competitor
-    svc.segment_summary.return_value = {"top_fornecedores": [], "concentracao_alta": True, "cnpj_dominante": "11111111000100"}
+    svc.segment_summary.return_value = {
+        "top_fornecedores": [], "concentracao_alta": True, "cnpj_dominante": "11111111000100"
+    }
     svc.price_benchmark.return_value = benchmark
     svc.organ_score.return_value = organ
 

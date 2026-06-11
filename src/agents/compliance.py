@@ -281,8 +281,8 @@ class ComplianceAgent:
         if not tender:
             return
         try:
-            from src.tools.direcionamento_checker import check as dir_check
             from src.schemas.results import Issue
+            from src.tools.direcionamento_checker import check as dir_check
             competitive = context.get("competitive_context")
             loop = asyncio.new_event_loop()
             d = loop.run_until_complete(dir_check(tender, competitive))
@@ -308,8 +308,8 @@ class ComplianceAgent:
             return
         item = items[0]
         try:
-            from src.tools.supply_chain_checker import check as sc_check
             from src.schemas.results import Issue
+            from src.tools.supply_chain_checker import check as sc_check
             loop = asyncio.new_event_loop()
             sc = loop.run_until_complete(
                 sc_check(
@@ -366,8 +366,8 @@ class ComplianceAgent:
         if not tender:
             return
         try:
-            from src.tools.direcionamento_checker import check as dir_check
             from src.schemas.results import Issue
+            from src.tools.direcionamento_checker import check as dir_check
             competitive = context.get("competitive_context")
             d = await dir_check(tender, competitive)
             parsed.direcionamento = d
@@ -390,8 +390,8 @@ class ComplianceAgent:
             return
         item = items[0]
         try:
-            from src.tools.supply_chain_checker import check as sc_check
             from src.schemas.results import Issue
+            from src.tools.supply_chain_checker import check as sc_check
             sc = await sc_check(
                 produto_descricao=getattr(item, "descricao", ""),
                 fabricante_nome=getattr(tender, "fornecedor_nome", "") or "",

@@ -2,12 +2,9 @@
 from __future__ import annotations
 
 import asyncio
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
-from src.schemas.estrategia import AcaoEstrategica, AcaoDireta, EstrategiaResult
+from src.schemas.estrategia import AcaoEstrategica, EstrategiaResult
 from src.schemas.results import BidDecision, ComplianceResult
 
 
@@ -87,7 +84,8 @@ def test_soma_impacto_pct():
 def test_sem_bid_decision_data_insuficiente():
     async def _run():
         from src.agents.estrategia import EstrategiaAgent
-        agent = EstrategiaAgent()
+        with patch("src.agents.estrategia.get_llm", return_value=MagicMock()):
+            agent = EstrategiaAgent()
         return await agent.arun({
             "bid_decision": None,
             "compliance": _make_compliance(),

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.api.auth import require_role
-from src.schemas.robo import ConfiguracaoRobo, EstrategiaLance, SessaoResult
+from src.schemas.robo import ConfiguracaoRobo, EstrategiaLance
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,10 @@ async def ativar_robo(
     return {
         "session_id": session_id,
         "status": "pendente",
-        "aviso": "Automação de lances está aguardando aprovação de Termos de Serviço. Nenhuma ação automática será executada.",
+        "aviso": (
+            "Automação de lances está aguardando aprovação de Termos de Serviço. "
+            "Nenhuma ação automática será executada."
+        ),
     }
 
 
@@ -103,7 +106,8 @@ async def status_robo(
             if not row:
                 return {"status": "sem_sessao", "lances": []}
             lances = await conn.fetch(
-                "SELECT numero, valor_brl, posicao_resultante, motivo, aprovado_hitl, timestamp_utc FROM session_lances WHERE session_id=$1 ORDER BY numero",
+                "SELECT numero, valor_brl, posicao_resultante, motivo, aprovado_hitl, timestamp_utc"
+                " FROM session_lances WHERE session_id=$1 ORDER BY numero",
                 row["id"],
             )
             return {
@@ -112,7 +116,7 @@ async def status_robo(
                 "posicao_final": row["posicao_final"],
                 "valor_final_brl": float(row["valor_final_brl"]) if row["valor_final_brl"] else None,
                 "motivo_encerramento": row["motivo_encerramento"],
-                "lances": [dict(l) for l in lances],
+                "lances": [dict(row) for row in lances],
             }
     except Exception as exc:
         logger.warning("robo: failed to fetch status: %s", exc)

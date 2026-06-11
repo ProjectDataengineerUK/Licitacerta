@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from functools import lru_cache
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import csv
 import io
 import json
@@ -6,7 +7,7 @@ from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 router = APIRouter(tags=["outcome"])

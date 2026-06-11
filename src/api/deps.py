@@ -49,7 +49,12 @@ def get_pncp_client(request: Request) -> PNCPClient:
 
 
 def get_tenant_user_store(request: Request) -> TenantUserStore:
-    return request.app.state.tenant_user_store
+    # Lazy: apps de teste criados sem lifespan não populam app.state
+    store = getattr(request.app.state, "tenant_user_store", None)
+    if store is None:
+        store = TenantUserStore()
+        request.app.state.tenant_user_store = store
+    return store
 
 
 def get_feature_flag_store(request: Request) -> FeatureFlagStore:
@@ -61,4 +66,9 @@ def get_admin_audit_store(request: Request) -> AdminAuditStore:
 
 
 def get_tenant_state_store(request: Request) -> TenantStateStore:
-    return request.app.state.tenant_state_store
+    # Lazy: apps de teste criados sem lifespan não populam app.state
+    store = getattr(request.app.state, "tenant_state_store", None)
+    if store is None:
+        store = TenantStateStore()
+        request.app.state.tenant_state_store = store
+    return store

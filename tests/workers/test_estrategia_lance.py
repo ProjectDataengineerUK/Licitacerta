@@ -73,9 +73,10 @@ def test_at007_margem_ok():
 
 # AT-008: run() raises NotImplementedError
 def test_at008_run_raises():
-    from src.workers.robo_lances_job import run
-    from src.schemas.robo import ConfiguracaoRobo, EstrategiaLance
     import asyncio
+
+    from src.schemas.robo import EstrategiaLance
+    from src.workers.robo_lances_job import run
 
     cfg = _cfg(EstrategiaLance.POR_VALOR, Decimal("1000"))
     with pytest.raises(NotImplementedError, match="ToS review pending"):

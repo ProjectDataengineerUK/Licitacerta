@@ -4,8 +4,6 @@ from __future__ import annotations
 import asyncio
 from unittest.mock import AsyncMock, patch
 
-import pytest
-
 from src.schemas.supply_chain import APICheck
 from src.tools.supply_chain_checker import (
     _aggregate_status,
@@ -100,7 +98,6 @@ def test_check_retorna_none_sem_categoria():
 
 # ── AT-005: Falha de API → nao_verificado (nunca bloqueia pipeline) ──────────
 def test_check_api_failure_retorna_nao_verificado():
-    import httpx
 
     async def _run():
         with patch("src.tools.supply_chain_checker._check_ceis", new_callable=AsyncMock) as mock_ceis, \

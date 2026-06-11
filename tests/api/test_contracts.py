@@ -133,3 +133,40 @@ async def test_delete_soft(cclient: AsyncClient):
     cid = (await cclient.post("/contracts", json=_contract_body())).json()["id"]
     assert (await cclient.delete(f"/contracts/{cid}")).status_code == 204
     assert (await cclient.get(f"/contracts/{cid}")).json()["status"] == "encerrado"
+
+
+# ── /financeiro/trend ─────────────────────────────────────────────────────────
+
+
+async def test_financeiro_trend_empty(cclient: AsyncClient):
+    resp = await cclient.get("/financeiro/trend?months=6")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["months"]) == 6
+    assert all(m["contratado_brl"] == 0.0 for m in data["months"])
+
+
+async def test_financeiro_trend_real_data(cclient: AsyncClient):
+    hoje = date.today()
+    mes_atual = f"{hoje.year:04d}-{hoje.month:02d}"
+    body = _contract_body(data_inicio=hoje.isoformat())
+    resp = await cclient.post("/contracts", json=body)
+    cid = resp.json()["id"]
+
+    r_emp = await cclient.post(
+        f"/contracts/{cid}/empenhos",
+        json={"numero_empenho": "2026NE01", "valor_brl": 10000.0, "data_emissao": hoje.isoformat()},
+    )
+    assert r_emp.status_code == 201
+    eid = r_emp.json()["id"]
+    r_pago = await cclient.patch(
+        f"/contracts/{cid}/empenhos/{eid}",
+        json={"status": "pago", "data_pagamento": hoje.isoformat()},
+    )
+    assert r_pago.status_code == 200
+
+    resp = await cclient.get("/financeiro/trend?months=3")
+    data = resp.json()
+    assert data["months"][-1]["mes"] == mes_atual
+    assert data["months"][-1]["contratado_brl"] == 120000.0
+    assert data["months"][-1]["recebido_brl"] == 10000.0

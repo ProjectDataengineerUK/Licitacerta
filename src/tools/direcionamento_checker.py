@@ -6,7 +6,6 @@ Never raises — returns low-score result on any exception.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -100,11 +99,13 @@ def _check_sinais_tender(tender: "TenderSchema") -> list[SinalDetectado]:
 
     checks: dict[str, tuple[bool, str]] = {
         "especificacao_unica": (
-            bool(getattr(tender, "especificacao_tem_marca", False) or getattr(tender, "exige_modelo_especifico", False)),
+            bool(getattr(tender, "especificacao_tem_marca", False)
+                 or getattr(tender, "exige_modelo_especifico", False)),
             str(getattr(tender, "exigencias_tecnicas", "") or ""),
         ),
         "atestado_especifico": (
-            bool(getattr(tender, "atestado_cnae_restritivo", False) or getattr(tender, "atestado_valor_elevado", False)),
+            bool(getattr(tender, "atestado_cnae_restritivo", False)
+                 or getattr(tender, "atestado_valor_elevado", False)),
             "Exigência de atestado específico identificada",
         ),
         "certidao_inexistente": (
@@ -172,6 +173,7 @@ def _identificar_beneficiario(tender: "TenderSchema", competitive: "CompetitiveC
 async def _gerar_fundamentacao(sinais: list[SinalDetectado], tender: "TenderSchema") -> tuple[str, list[str]]:
     try:
         from langchain_core.messages import HumanMessage, SystemMessage
+
         from src.agents.model_router import ModelTier, get_llm
 
         sinal_desc = "; ".join(f"{s.codigo} (peso {s.peso})" for s in sinais)

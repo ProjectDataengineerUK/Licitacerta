@@ -7,13 +7,12 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from typing import Any, AsyncGenerator
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.model_router import ModelTier, get_llm
-from src.schemas.mentor import AcaoSugerida, EvidenciaMentor, MentorMessage, MentorResponse, TipoResposta
+from src.schemas.mentor import MentorMessage, MentorResponse
 
 logger = logging.getLogger(__name__)
 

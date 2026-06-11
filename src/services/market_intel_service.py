@@ -87,7 +87,7 @@ class MarketIntelService:
         orgao_cnpj: str | None = None,
     ) -> PriceBenchmark:
         orgao_filter = "AND orgao_cnpj = $3" if orgao_cnpj else ""
-        base_params: list = [catmat_code or "", orgao_cnpj] if orgao_cnpj else [catmat_code or ""]
+
 
         if catmat_code:
             sql = f"""

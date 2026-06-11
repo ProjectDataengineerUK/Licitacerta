@@ -10,6 +10,16 @@ from src.schemas.onboarding import CoachDica, DicaCategoria, OnboardingProgress
 logger = logging.getLogger(__name__)
 
 
+def _tenant_key(tenant_id: str) -> Any:
+    """Coluna é UUID em produção, mas tenants de dev/teste usam ids livres."""
+    if not tenant_id:
+        return uuid.uuid4()
+    try:
+        return uuid.UUID(tenant_id)
+    except ValueError:
+        return tenant_id
+
+
 def _row_to_dica(row: dict[str, Any]) -> CoachDica:
     return CoachDica(
         id=row["id"],
@@ -24,11 +34,12 @@ def _row_to_dica(row: dict[str, Any]) -> CoachDica:
 async def get_progress(tenant_id: str, conn: Any) -> OnboardingProgress:
     try:
         dicas_rows = await conn.fetch(
-            "SELECT id, titulo, descricao, categoria, rota_sugerida, ordem FROM coach_dicas WHERE ativo=TRUE ORDER BY ordem"
+            "SELECT id, titulo, descricao, categoria, rota_sugerida, ordem"
+            " FROM coach_dicas WHERE ativo=TRUE ORDER BY ordem"
         )
         progresso_rows = await conn.fetch(
             "SELECT dica_id, visto_em, dispensado_em FROM onboarding_progresso WHERE tenant_id=$1",
-            uuid.UUID(tenant_id) if tenant_id else uuid.uuid4(),
+            _tenant_key(tenant_id),
         )
     except Exception as exc:
         logger.warning("onboarding: db error fetching progress: %s", exc)
@@ -65,7 +76,7 @@ async def marcar_vista(
     dispensar: bool,
     conn: Any,
 ) -> None:
-    tid = uuid.UUID(tenant_id) if tenant_id else uuid.uuid4()
+    tid = _tenant_key(tenant_id)
     if dispensar:
         await conn.execute(
             """INSERT INTO onboarding_progresso (tenant_id, dica_id, dispensado_em)

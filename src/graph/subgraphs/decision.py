@@ -212,7 +212,10 @@ def build_decision_subgraph():
                         agent="estrategia",
                         action="generate_strategy",
                         input_summary=f"bid={getattr(state.get('bid_decision'), 'recommendation', 'N/A')}",
-                        output_summary=f"prob_com_acoes={result.probabilidade_com_acoes_pct:.0f}% acoes={len(result.acoes)}",
+                        output_summary=(
+                            f"prob_com_acoes={result.probabilidade_com_acoes_pct:.0f}% "
+                            f"acoes={len(result.acoes)}"
+                        ),
                         model_used=settings.gemini_pro,
                         latency_ms=int((time.time() - t0) * 1000),
                         tokens_used=0,
@@ -240,7 +243,7 @@ def build_decision_subgraph():
         t0 = time.time()
         try:
             from decimal import Decimal as _Decimal
-            from math import ceil as _ceil
+
             from src.services.cashflow_simulator import simular
 
             tender = state.get("tender_schema")
@@ -307,7 +310,9 @@ def build_decision_subgraph():
             return {"pregoeiro_perfil": None}
         try:
             import os
+
             import asyncpg
+
             from src.services.pregoeiro_service import PregoeicoService
             db_url = os.environ.get("DATABASE_URL")
             if not db_url:

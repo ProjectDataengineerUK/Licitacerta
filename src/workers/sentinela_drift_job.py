@@ -4,12 +4,31 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from src.sentinela.drift_detector import DriftDetector
 from src.sentinela.data_quality_checker import check_all_sources
+from src.sentinela.drift_detector import DriftDetector
 
 logger = logging.getLogger(__name__)
 
 AGENTS = ["compliance", "bid_no_bid", "impugnacao"]
+
+OPS_ALERTS_TOPIC = "sentinela-ops-alerts"
+
+
+async def _send_ops_alert(level: str, message: str) -> None:
+    """Publica alerta operacional no Pub/Sub; sem GCP, loga em ERROR."""
+    import os
+
+    if not os.environ.get("GCP_PROJECT_ID"):
+        logger.error("OPS_ALERT level=%s message=%s", level, message)
+        return
+    try:
+        from src.gcp.pubsub import PubSubPublisher
+
+        PubSubPublisher.from_env().publish_event(
+            OPS_ALERTS_TOPIC, {"level": level, "message": message, "source": "sentinela"}
+        )
+    except Exception as exc:
+        logger.error("OPS_ALERT publish failed (%s) level=%s message=%s", exc, level, message)
 
 
 async def run_drift_check() -> None:
@@ -23,17 +42,11 @@ async def run_drift_check() -> None:
                 report.kl_divergence,
                 report.current_sample_n,
             )
-            try:
-                from src.api.notification_dispatcher import NotificationDispatcher
-                await NotificationDispatcher.send_alert(
-                    level="warning",
-                    message=(
-                        f"Drift detectado em {agent}: KL={report.kl_divergence:.4f} "
-                        f"(threshold={0.1}). Verifique o prompt ativo."
-                    ),
-                )
-            except Exception as exc:
-                logger.warning("drift alert send failed: %s", exc)
+            await _send_ops_alert(
+                "warning",
+                f"Drift detectado em {agent}: KL={report.kl_divergence:.4f} "
+                f"(threshold=0.1). Verifique o prompt ativo.",
+            )
 
 
 async def run_data_quality_check() -> None:
@@ -46,14 +59,10 @@ async def run_data_quality_check() -> None:
                 health.error,
                 health.latency_ms,
             )
-            try:
-                from src.api.notification_dispatcher import NotificationDispatcher
-                await NotificationDispatcher.send_alert(
-                    level="critical",
-                    message=f"Fonte {health.source_name} indisponível: {health.error}",
-                )
-            except Exception as exc:
-                logger.warning("source alert send failed: %s", exc)
+            await _send_ops_alert(
+                "critical",
+                f"Fonte {health.source_name} indisponível: {health.error}",
+            )
 
 
 async def main() -> None:

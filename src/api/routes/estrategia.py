@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -42,8 +41,9 @@ async def toggle_acao(
     concluida: bool = body.get("concluida", True)
 
     try:
-        import asyncpg
         import os
+
+        import asyncpg
         url = os.environ.get("DATABASE_URL")
         if not url:
             raise HTTPException(503, "DATABASE_URL not set")

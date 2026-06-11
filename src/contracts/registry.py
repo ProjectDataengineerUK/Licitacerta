@@ -8,7 +8,6 @@ from src.schemas.results import (
     EligibilityResult,
     ImpugnacaoResult,
     LegalRegimeResult,
-    PricingResult,
 )
 from src.schemas.tender import TenderSchema
 

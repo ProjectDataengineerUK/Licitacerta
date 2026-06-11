@@ -1,8 +1,7 @@
 """Tests for onboarding_service — AT-001..AT-006."""
 from __future__ import annotations
 
-import uuid
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 

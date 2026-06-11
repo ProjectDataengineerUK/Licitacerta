@@ -1,8 +1,6 @@
 """Tests for PII scanner — AT-004."""
 from __future__ import annotations
 
-import pytest
-
 from src.sentinela.pii_scanner import scan_prompt
 
 
