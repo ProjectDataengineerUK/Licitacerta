@@ -1,0 +1,44 @@
+name: Build & Push Robo Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/workers/robo_lances_job.py"
+      - "src/schemas/robo.py"
+      - "Dockerfile.robo"
+      - "pyproject.toml"
+      - "poetry.lock"
+
+env:
+  PROJECT_ID: licitacerta-dev
+  REGION: southamerica-east1
+  IMAGE: gcr.io/licitacerta-dev/robo-lances
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build and push
+        run: |
+          docker build -f Dockerfile.robo -t $IMAGE:${{ github.sha }} -t $IMAGE:latest .
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest

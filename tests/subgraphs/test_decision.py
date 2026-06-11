@@ -93,7 +93,35 @@ def decision_graph_with_mocks():
     mock_impugnacao.arun = _arun
     mock_impugnacao.get_last_metric.return_value = None
 
+    mock_market = MagicMock()
+
+    async def _mi_arun(ctx):
+        from src.schemas.market import CompetitiveContext
+        return CompetitiveContext(
+            data_insuficiente=True,
+            resumo="Dados de mercado insuficientes para análise competitiva.",
+        )
+
+    mock_market.arun = _mi_arun
+    mock_market.get_last_metric.return_value = None
+
+    mock_estrategia = MagicMock()
+
+    async def _est_arun(ctx):
+        from src.schemas.estrategia import EstrategiaResult
+        return EstrategiaResult(
+            probabilidade_sem_acoes_pct=50.0,
+            probabilidade_com_acoes_pct=65.0,
+            acoes=[],
+            resumo_executivo="Sem ações adicionais.",
+        )
+
+    mock_estrategia.arun = _est_arun
+    mock_estrategia.get_last_metric.return_value = None
+
     with (
+        patch("src.graph.subgraphs.decision.MarketIntelAgent", return_value=mock_market),
+        patch("src.graph.subgraphs.decision.EstrategiaAgent", return_value=mock_estrategia),
         patch("src.graph.subgraphs.decision.PricingAgent", return_value=mock_pricing),
         patch("src.graph.subgraphs.decision.BidNoBidAgent", return_value=mock_bid),
         patch("src.graph.subgraphs.decision.ImpugnacaoAgent", return_value=mock_impugnacao),
@@ -111,7 +139,7 @@ async def test_decision_happy_path(decision_graph_with_mocks):
     assert result["pricing"].recommended_price == Decimal("97560.98")
     assert result["bid_decision"].recommendation == "participar"
     assert result["bid_decision"].risk_level == "low"
-    assert len(result["audit_log"]) == 2
+    assert len(result["audit_log"]) == 5  # market_intel, pricing, bid, estrategia, cashflow
     assert result["impugnacao"] is None
     assert result["errors"] == []
 
@@ -143,7 +171,7 @@ async def test_decision_audit_log_order(decision_graph_with_mocks):
     result = await graph.ainvoke(_base_state())
 
     agents = [e.agent for e in result["audit_log"]]
-    assert agents == ["pricing", "bid_no_bid"]
+    assert agents == ["market_intel", "pricing", "bid_no_bid", "estrategia", "cashflow"]
 
 
 async def test_decision_audit_log_order_with_impugnacao(decision_graph_with_mocks):
@@ -153,7 +181,7 @@ async def test_decision_audit_log_order_with_impugnacao(decision_graph_with_mock
     result = await graph.ainvoke(_base_state())
 
     agents = [e.agent for e in result["audit_log"]]
-    assert agents == ["pricing", "bid_no_bid", "impugnacao"]
+    assert agents == ["market_intel", "pricing", "bid_no_bid", "estrategia", "cashflow", "impugnacao"]
 
 
 async def test_decision_context_minimum(decision_graph_with_mocks):

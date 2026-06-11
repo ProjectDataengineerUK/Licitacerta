@@ -83,6 +83,58 @@ async def contracts_dashboard(
     return dash
 
 
+class FinanceiroTrendMonth(BaseModel):
+    mes: str  # "YYYY-MM"
+    contratado_brl: float = 0.0
+    recebido_brl: float = 0.0
+    a_receber_brl: float = 0.0
+
+
+class FinanceiroTrend(BaseModel):
+    months: list[FinanceiroTrendMonth] = []
+
+
+def _month_key(d: date) -> str:
+    return f"{d.year:04d}-{d.month:02d}"
+
+
+def _last_months(n: int) -> list[str]:
+    today = date.today()
+    keys = []
+    year, month = today.year, today.month
+    for _ in range(n):
+        keys.append(f"{year:04d}-{month:02d}")
+        month -= 1
+        if month == 0:
+            month, year = 12, year - 1
+    return list(reversed(keys))
+
+
+@router.get("/financeiro/trend", response_model=FinanceiroTrend)
+async def financeiro_trend(
+    months: int = Query(default=6, ge=1, le=24),
+    store: ContractStore = Depends(get_contract_store),
+    _auth=Depends(require_role("user", "operator")),
+):
+    """Série mensal real de contratado/recebido/a receber — alimenta o gráfico do Cockpit."""
+    keys = _last_months(months)
+    buckets = {k: FinanceiroTrendMonth(mes=k) for k in keys}
+    for c in await store.list():
+        k = _month_key(c.data_inicio)
+        if k in buckets and c.status in ("ativo", "renovado", "encerrado"):
+            buckets[k].contratado_brl += c.valor_atual_brl or c.valor_original_brl
+        for e in c.empenhos:
+            if e.status == "pago" and e.data_pagamento:
+                kp = _month_key(e.data_pagamento)
+                if kp in buckets:
+                    buckets[kp].recebido_brl += e.valor_brl
+            elif e.status in ("emitido", "liquidado"):
+                ke = _month_key(e.data_emissao)
+                if ke in buckets:
+                    buckets[ke].a_receber_brl += e.valor_brl
+    return FinanceiroTrend(months=[buckets[k] for k in keys])
+
+
 @router.get("/contracts/alerts", response_model=list[ContractAlert])
 async def contracts_alerts(
     store: ContractStore = Depends(get_contract_store),

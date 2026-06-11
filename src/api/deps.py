@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from src.api.admin_audit_store import AdminAuditStore
 from src.api.alert_store import AlertStore
 from src.api.billing_store import BillingStore
 from src.api.contract_store import ContractStore
+from src.api.feature_flag_store import FeatureFlagStore
 from src.api.pncp_client import PNCPClient
 from src.api.store import RunStore
+from src.api.tenant_state_store import TenantStateStore
+from src.api.tenant_user_store import TenantUserStore
 from src.api.watch_store import WatchStore
 
 
@@ -42,3 +46,29 @@ def get_watch_store(request: Request) -> WatchStore:
 
 def get_pncp_client(request: Request) -> PNCPClient:
     return request.app.state.pncp_client
+
+
+def get_tenant_user_store(request: Request) -> TenantUserStore:
+    # Lazy: apps de teste criados sem lifespan não populam app.state
+    store = getattr(request.app.state, "tenant_user_store", None)
+    if store is None:
+        store = TenantUserStore()
+        request.app.state.tenant_user_store = store
+    return store
+
+
+def get_feature_flag_store(request: Request) -> FeatureFlagStore:
+    return request.app.state.feature_flag_store
+
+
+def get_admin_audit_store(request: Request) -> AdminAuditStore:
+    return request.app.state.admin_audit_store
+
+
+def get_tenant_state_store(request: Request) -> TenantStateStore:
+    # Lazy: apps de teste criados sem lifespan não populam app.state
+    store = getattr(request.app.state, "tenant_state_store", None)
+    if store is None:
+        store = TenantStateStore()
+        request.app.state.tenant_state_store = store
+    return store

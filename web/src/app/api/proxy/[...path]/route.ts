@@ -10,6 +10,8 @@ async function proxy(req: NextRequest, path: string): Promise<NextResponse> {
   if (auth) headers.set("authorization", auth);
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
+  const adminKey = req.headers.get("x-admin-key");
+  if (adminKey) headers.set("x-admin-key", adminKey);
 
   const body = req.method === "GET" || req.method === "HEAD" ? undefined : req.body;
 

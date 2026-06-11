@@ -6,6 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { BidBanner } from "@/components/BidBanner";
 import { AgentCard } from "@/components/AgentCard";
+import { SupplyChainCard } from "@/components/SupplyChainCard";
+import { EstrategiaCard } from "@/components/EstrategiaCard";
+import { DirecionamentoCard } from "@/components/DirecionamentoCard";
+import { PregoeirCard } from "@/components/PregoeirCard";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -29,6 +33,35 @@ export default function ResultPage({ params }: Props) {
   const { data: cost } = useQuery({
     queryKey: ["cost", id],
     queryFn: () => api.getCost(id),
+  });
+
+  const { data: estrategia } = useQuery({
+    queryKey: ["estrategia", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/runs/${id}/estrategia`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const { data: supplyChain } = useQuery({
+    queryKey: ["supply-chain", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/runs/${id}/supply-chain`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const { data: pregoeiro } = useQuery({
+    queryKey: ["pregoeiro", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/runs/${id}/pregoeiro`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data?.status) return null;
+      return data;
+    },
   });
 
   if (isLoading) {
@@ -92,6 +125,34 @@ export default function ResultPage({ params }: Props) {
           })}
         </div>
       </div>
+
+      {/* Direcionamento */}
+      {result.compliance?.direcionamento && (
+        <DirecionamentoCard
+          runId={id}
+          data={result.compliance.direcionamento as unknown as Parameters<typeof DirecionamentoCard>[0]["data"]}
+        />
+      )}
+
+      {/* Strategy */}
+      {estrategia && !estrategia.data_insuficiente && (
+        <EstrategiaCard runId={id} data={estrategia} />
+      )}
+
+      {/* Supply chain */}
+      {supplyChain && supplyChain.status !== "nao_aplicavel" && (
+        <SupplyChainCard data={supplyChain} />
+      )}
+
+      {/* Pregoeiro profile */}
+      {pregoeiro && (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Pregoeiro
+          </h2>
+          <PregoeirCard perfil={pregoeiro} />
+        </div>
+      )}
 
       {/* Cost breakdown */}
       {cost && (

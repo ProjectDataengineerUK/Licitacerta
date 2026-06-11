@@ -7,26 +7,38 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.api.alert_store import AlertStore
-from src.api.billing_store import BillingStore
-from src.api.contract_store import ContractStore
 from src.api.pncp_client import PNCPClient
+from src.api.routes.admin import router as admin_router
 from src.api.routes.alerts import router as alerts_router
 from src.api.routes.analyze import router as analyze_router
+from src.api.routes.ativacao import router as ativacao_router
 from src.api.routes.billing import router as billing_router
 from src.api.routes.certidoes import router as certidoes_router
+from src.api.routes.colaboracao import router as colaboracao_router
+from src.api.routes.config import router as config_router
 from src.api.routes.contracts import router as contracts_router
 from src.api.routes.dashboard import router as dashboard_router
+from src.api.routes.digest import router as digest_router
 from src.api.routes.documents import router as documents_router
+from src.api.routes.estrategia import router as estrategia_router
 from src.api.routes.health_score import router as health_score_router
 from src.api.routes.hitl import router as hitl_router
+from src.api.routes.lgpd import router as lgpd_router
+from src.api.routes.market_intel import router as market_intel_router
+from src.api.routes.mentor import router as mentor_router
+from src.api.routes.onboarding import router as onboarding_router
+from src.api.routes.outcome import router as outcome_router
+from src.api.routes.portfolio import router as portfolio_router
+from src.api.routes.proposal_export import router as proposal_export_router
 from src.api.routes.radar import router as radar_router
+from src.api.routes.recebiveis import router as recebiveis_router
+from src.api.routes.robo import router as robo_router
 from src.api.routes.runs import router as runs_router
+from src.api.routes.sentinela import router as sentinela_router
 from src.api.routes.tenants import router as tenants_router
 from src.api.routes.watch import router as watch_router
 from src.api.store import RunStore
 from src.api.watch_agent import watch_poll_loop
-from src.api.watch_store import WatchStore
 from src.config import settings
 from src.graph.checkpoint import get_checkpointer
 from src.graph.supervisor import build_supervisor
@@ -36,14 +48,41 @@ from src.graph.supervisor import build_supervisor
 async def lifespan(app: FastAPI):
     checkpointer, close_checkpointer = await get_checkpointer()
     app.state.graph = build_supervisor(checkpointer=checkpointer)
-    app.state.store = RunStore()
-    app.state.contract_store = ContractStore()
-    app.state.alert_store = AlertStore()
-    app.state.billing_store = BillingStore()
-    app.state.watch_store = WatchStore()
+    app.state.store = RunStore()  # runs: efêmero por design (checkpointer = fonte de verdade)
+
+    # Pool asyncpg compartilhado (PERSISTENCIA_STORES + MarketIntel)
+    import os as _os
+    _db_url = _os.environ.get("DATABASE_URL")
+    _pool = None
+    if _db_url:
+        import asyncpg
+        _pool = await asyncpg.create_pool(_db_url, min_size=1, max_size=5)
+    app.state.db_pool = _pool
+    app.state._mi_pool = _pool  # alias legado (ConsentMiddleware, robo, lgpd)
+
+    # Stores — AlloyDB quando há pool; in-memory caso contrário (dev/CI)
+    from src.api.store_factory import build_stores
+    stores = build_stores(_pool)
+    await stores.hydrate(_pool)
+    app.state.stores = stores
+    app.state.contract_store = stores.contracts
+    app.state.alert_store = stores.alerts
+    app.state.billing_store = stores.billing
+    app.state.tenant_user_store = stores.tenant_users
+    app.state.watch_store = stores.watch
+    app.state.feature_flag_store = stores.feature_flags
+    app.state.admin_audit_store = stores.admin_audit
+    app.state.tenant_state_store = stores.tenant_states
+
     pncp_client = PNCPClient()
     await pncp_client.__aenter__()
     app.state.pncp_client = pncp_client
+
+    if _pool is not None:
+        from src.services.market_intel_service import MarketIntelService
+        app.state.market_intel_service = MarketIntelService(_pool)
+    else:
+        app.state.market_intel_service = None
 
     # GCP secret bootstrap — only when running on GCP
     if settings.gcp_project_id:
@@ -61,6 +100,9 @@ async def lifespan(app: FastAPI):
     with contextlib.suppress(asyncio.CancelledError):
         await _poll_task
     await pncp_client.__aexit__(None, None, None)
+    await stores.aclose()
+    if app.state._mi_pool:
+        await app.state._mi_pool.close()
     await close_checkpointer()
 
 
@@ -80,9 +122,17 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(TenantContextMiddleware)
-    app.add_middleware(FirebaseAuthMiddleware)
+    from src.api.middleware.admin_auth import AdminAuthMiddleware
+    from src.api.middleware.behavior_tracker import BehaviorTrackerMiddleware
+    from src.api.middleware.consent import ConsentMiddleware
 
+    app.add_middleware(TenantContextMiddleware)
+    app.add_middleware(ConsentMiddleware)
+    app.add_middleware(FirebaseAuthMiddleware)
+    app.add_middleware(AdminAuthMiddleware)
+    app.add_middleware(BehaviorTrackerMiddleware)
+
+    app.include_router(admin_router)
     app.include_router(analyze_router)
     app.include_router(runs_router)
     app.include_router(watch_router)
@@ -96,6 +146,21 @@ def create_app() -> FastAPI:
     app.include_router(alerts_router)
     app.include_router(billing_router)
     app.include_router(health_score_router)
+    app.include_router(config_router)
+    app.include_router(market_intel_router)
+    app.include_router(estrategia_router)
+    app.include_router(mentor_router)
+    app.include_router(portfolio_router)
+    app.include_router(recebiveis_router)
+    app.include_router(robo_router)
+    app.include_router(onboarding_router)
+    app.include_router(sentinela_router)
+    app.include_router(lgpd_router)
+    app.include_router(ativacao_router)
+    app.include_router(proposal_export_router)
+    app.include_router(outcome_router)
+    app.include_router(digest_router)
+    app.include_router(colaboracao_router)
 
     @app.get("/healthz", include_in_schema=False)
     async def healthz():

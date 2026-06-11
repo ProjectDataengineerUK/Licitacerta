@@ -1,0 +1,183 @@
+name: Deploy Prod
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Tag da imagem a deployar (SHA ou tag semântica)"
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP (prod)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+          service_account: ${{ secrets.PROD_WIF_SA }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image tag
+        id: meta
+        run: |
+          TAG="${{ github.event.inputs.image_tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push API image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ steps.meta.outputs.tag }}"
+          docker build -f Dockerfile.api -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build and push Worker image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ steps.meta.outputs.tag }}"
+          docker build -f Dockerfile.worker -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Build and push Web image
+        run: |
+          IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ steps.meta.outputs.tag }}"
+          docker build -f web/Dockerfile.web \
+            --build-arg NEXT_PUBLIC_FIREBASE_API_KEY="${{ secrets.PROD_FIREBASE_API_KEY }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="${{ secrets.PROD_FIREBASE_AUTH_DOMAIN }}" \
+            --build-arg NEXT_PUBLIC_FIREBASE_PROJECT_ID="${{ secrets.PROD_PROJECT_ID }}" \
+            -t "$IMAGE" web/
+          docker push "$IMAGE"
+
+  terraform-plan:
+    needs: build-push
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/envs/prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Authenticate to GCP (prod)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+          service_account: ${{ secrets.PROD_WIF_SA }}
+
+      - run: terraform init
+
+      - name: Terraform Plan
+        run: |
+          terraform plan -no-color \
+            -var="project_id=${{ secrets.PROD_PROJECT_ID }}" \
+            -var="project_number=${{ secrets.PROD_PROJECT_NUMBER }}" \
+            -var="artifact_registry_repo=${{ secrets.AR_REPO }}" \
+            -var="image_tag=${{ needs.build-push.outputs.image_tag }}" \
+            -var="alloydb_initial_password=${{ secrets.PROD_ALLOYDB_PASSWORD }}" \
+            -out=tfplan 2>&1 | tee plan.txt
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-prod-plan
+          path: terraform/envs/prod/tfplan
+          retention-days: 1
+
+  terraform-apply:
+    needs: [build-push, terraform-plan]
+    runs-on: ubuntu-latest
+    environment: production  # ← pausa para aprovação manual no GitHub
+    defaults:
+      run:
+        working-directory: terraform/envs/prod
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.6"
+
+      - name: Authenticate to GCP (prod)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+          service_account: ${{ secrets.PROD_WIF_SA }}
+
+      - run: terraform init
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-prod-plan
+          path: terraform/envs/prod/
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
+
+  deploy-services:
+    needs: [build-push, terraform-apply]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Authenticate to GCP (prod)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.PROD_WIF_PROVIDER }}
+          service_account: ${{ secrets.PROD_WIF_SA }}
+
+      - name: Deploy API to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-api-prod
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/api:${{ needs.build-push.outputs.image_tag }}
+
+      - name: Deploy Worker to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-worker-prod
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/worker:${{ needs.build-push.outputs.image_tag }}
+
+      - name: Get API URL
+        id: api-url
+        run: |
+          URL=$(gcloud run services describe licitacerta-api-prod \
+            --region="${{ secrets.GCP_REGION }}" \
+            --project="${{ secrets.PROD_PROJECT_ID }}" \
+            --format='value(status.url)')
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy Web to Cloud Run
+        id: deploy-web
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: licitacerta-web-prod
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.PROD_PROJECT_ID }}/${{ secrets.AR_REPO }}/web:${{ needs.build-push.outputs.image_tag }}
+          env_vars: |
+            API_INTERNAL_URL=${{ steps.api-url.outputs.url }}
+
+      - name: Deployment summary
+        run: |
+          echo "## Prod Deployment ${{ needs.build-push.outputs.image_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API: ${{ steps.api-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Web: ${{ steps.deploy-web.outputs.url }}" >> $GITHUB_STEP_SUMMARY

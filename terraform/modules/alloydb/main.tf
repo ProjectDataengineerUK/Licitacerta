@@ -11,6 +11,27 @@ variable "cpu_count" {
   type    = number
   default = 2
 }
+variable "availability_type" {
+  type    = string
+  default = "ZONAL"
+  validation {
+    condition     = contains(["ZONAL", "REGIONAL"], var.availability_type)
+    error_message = "availability_type must be ZONAL or REGIONAL."
+  }
+}
+variable "pitr_enabled" {
+  type    = bool
+  default = false
+}
+variable "pitr_recovery_window_days" {
+  type    = number
+  default = 14
+}
+variable "initial_password" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
 
 resource "google_alloydb_cluster" "main" {
   project    = var.project_id
@@ -22,7 +43,7 @@ resource "google_alloydb_cluster" "main" {
   }
 
   initial_user {
-    password = ""
+    password = var.initial_password
   }
 
   automated_backup_policy {
@@ -40,12 +61,21 @@ resource "google_alloydb_cluster" "main" {
       count = 7
     }
   }
+
+  dynamic "continuous_backup_config" {
+    for_each = var.pitr_enabled ? [1] : []
+    content {
+      enabled              = true
+      recovery_window_days = var.pitr_recovery_window_days
+    }
+  }
 }
 
 resource "google_alloydb_instance" "primary" {
-  cluster       = google_alloydb_cluster.main.name
-  instance_id   = var.instance_id
-  instance_type = "PRIMARY"
+  cluster           = google_alloydb_cluster.main.name
+  instance_id       = var.instance_id
+  instance_type     = "PRIMARY"
+  availability_type = var.availability_type
 
   machine_config {
     cpu_count = var.cpu_count

@@ -1,6 +1,10 @@
 import operator
 from typing import Annotated, TypedDict
 
+from src.schemas.cashflow import CashflowSimulation
+from src.schemas.estrategia import EstrategiaResult
+from src.schemas.market import CompetitiveContext
+from src.schemas.pregoeiro import PregoeiroPerfil
 from src.schemas.results import (
     AgentError,
     AgentMetric,
@@ -37,9 +41,15 @@ class TenderState(TypedDict):
     blacklist: BlacklistResult | None
 
     # --- Decisão (Camada 4) ---
+    competitive_context: CompetitiveContext | None
     pricing: PricingResult | None
     bid_decision: BidDecision | None
     impugnacao: ImpugnacaoResult | None
+
+    # --- Simulação (Camada 4b) ---
+    cashflow_simulation: CashflowSimulation | None
+    estrategia_result: EstrategiaResult | None
+    pregoeiro_perfil: PregoeiroPerfil | None
 
     # --- Execução (Camada 5) ---
     proposal_draft: ProposalDraft | None
@@ -65,6 +75,10 @@ def initial_state(edital_id: str, edital_raw: str, company_cnpj: str) -> TenderS
         eligibility=None,
         compliance=None,
         blacklist=None,
+        competitive_context=None,
+        cashflow_simulation=None,
+        estrategia_result=None,
+        pregoeiro_perfil=None,
         pricing=None,
         bid_decision=None,
         proposal_draft=None,

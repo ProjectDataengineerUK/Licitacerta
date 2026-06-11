@@ -1,0 +1,73 @@
+name: Eval Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/agents/**'
+      - 'src/prompts/**'
+
+jobs:
+  eval:
+    name: Agent Evals (threshold 80%)
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: mock
+      EVAL_REAL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[test]"
+
+      - name: Run eval suite
+        run: |
+          python -m pytest tests/evals/ \
+            --tb=short \
+            -q \
+            --junitxml=.eval_results/junit.xml \
+            -p no:warnings
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || 'mock' }}
+
+      - name: Check eval threshold
+        run: |
+          python scripts/eval_compare.py \
+            --junit=.eval_results/junit.xml \
+            --min-pass-rate=0.80
+
+      - name: Upload eval artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: .eval_results/
+          retention-days: 30
+
+  contract-tests:
+    name: Schema Contract Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[test]"
+
+      - name: Run contract tests
+        run: |
+          python -m pytest tests/contracts/ \
+            --tb=short \
+            -q

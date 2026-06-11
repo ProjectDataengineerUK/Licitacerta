@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import math
 from datetime import date
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 _BASE = "https://pncp.gov.br/api/consulta/v1"
 
@@ -131,6 +134,60 @@ class PNCPClient:
                 page += 1
             except Exception:
                 break
+        return results
+
+    async def fetch_contratos(
+        self,
+        data_inicial: date,
+        data_final: date,
+        page_size: int = 50,
+    ) -> list[dict]:
+        """Ingere contratos homologados do PNCP com backoff exponencial e paginação."""
+        assert self._client is not None, "PNCPClient must be used as async context manager"
+        import asyncio
+
+        results: list[dict] = []
+        seen: set[str] = set()
+        page = 1
+        retries = 0
+
+        while True:
+            try:
+                resp = await self._client.get(
+                    f"{_BASE}/contratos",
+                    params={
+                        "dataInicial": data_inicial.isoformat(),
+                        "dataFinal": data_final.isoformat(),
+                        "pagina": page,
+                        "tamanhoPagina": page_size,
+                    },
+                )
+                resp.raise_for_status()
+                payload = resp.json()
+                items: list[dict] = payload.get("data", [])
+                retries = 0
+
+                for item in items:
+                    key = item.get("numeroControlePNCP") or item.get("numeroControle", "")
+                    if key and key not in seen:
+                        seen.add(key)
+                        results.append(item)
+
+                total = payload.get("totalRegistros", 0)
+                total_pages = math.ceil(total / page_size) if total > page_size else 1
+                if page >= total_pages or not items:
+                    break
+                page += 1
+
+            except Exception as exc:
+                retries += 1
+                if retries > 3:
+                    logger.warning("fetch_contratos abortou após %d retentativas: %s", retries, exc)
+                    break
+                wait = 2 ** retries
+                logger.warning("fetch_contratos erro (tentativa %d/%d) — aguardando %ds: %s", retries, 3, wait, exc)
+                await asyncio.sleep(wait)
+
         return results
 
     async def fetch_orgs_with_pca(self, ano: int, page_size: int = 50) -> list[dict]:

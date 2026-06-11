@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { NavBar } from "@/components/NavBar";
+import { Sidebar } from "@/components/Sidebar";
+import { CoachOverlay } from "@/components/CoachOverlay";
+import { ActivationGuard } from "@/components/ActivationGuard";
+import { ConsentGate } from "@/components/ConsentGate";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +23,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} bg-zinc-950 text-zinc-100 min-h-screen`}>
+      <body className={`${inter.className} bg-zinc-950 text-zinc-100`}>
         <Providers>
-          <NavBar />
-          <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
+          <ActivationGuard>
+            <div className="flex h-screen overflow-hidden">
+              <Sidebar />
+              <div className="flex-1 overflow-y-auto">
+                <main className="px-8 py-8 min-h-full">{children}</main>
+              </div>
+            </div>
+            <CoachOverlay />
+            <ConsentGate />
+          </ActivationGuard>
         </Providers>
       </body>
     </html>
