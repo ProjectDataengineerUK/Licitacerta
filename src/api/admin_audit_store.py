@@ -26,8 +26,15 @@ class AuditEntry(BaseModel):
 
 
 class AdminAuditStore:
-    def __init__(self) -> None:
+    def __init__(self, persister: Any = None) -> None:
         self._entries: list[AuditEntry] = []
+        self._persister = persister  # write-through opcional (PERSISTENCIA_STORES)
+
+    async def hydrate(self, pool: Any) -> None:
+        rows = await pool.fetch(
+            "SELECT data FROM admin_audit ORDER BY created_at ASC"
+        )
+        self._entries = [AuditEntry.model_validate_json(r["data"]) for r in rows][-_MAX_IN_MEMORY:]
 
     def append(
         self,
@@ -48,6 +55,8 @@ class AdminAuditStore:
             dados_depois=dados_depois,
         )
         self._entries.append(entry)
+        if self._persister:
+            self._persister.upsert("admin_audit", {"id": entry.id}, entry.model_dump_json())
         if len(self._entries) > _MAX_IN_MEMORY:
             self._entries = self._entries[-_MAX_IN_MEMORY:]
         return entry

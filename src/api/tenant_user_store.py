@@ -64,10 +64,30 @@ class NotifPrefs(BaseModel):
 
 
 class TenantUserStore:
-    def __init__(self) -> None:
+    def __init__(self, persister: Any = None) -> None:
         self._members: dict[str, TenantMember] = {}   # id → member
         self._invites: dict[str, TenantInvite] = {}   # id → invite
         self._notif: dict[str, NotifPrefs] = {}        # tenant_id → prefs
+        self._persister = persister  # write-through opcional (PERSISTENCIA_STORES)
+
+    def _save_member(self, m: TenantMember) -> None:
+        if self._persister:
+            self._persister.upsert("tenant_members", {"id": m.id, "tenant_id": m.tenant_id}, m.model_dump_json())
+
+    def _save_invite(self, i: TenantInvite) -> None:
+        if self._persister:
+            self._persister.upsert("tenant_invites", {"id": i.id, "tenant_id": i.tenant_id}, i.model_dump_json())
+
+    async def hydrate(self, pool: Any) -> None:
+        for r in await pool.fetch("SELECT data FROM tenant_members"):
+            m = TenantMember.model_validate_json(r["data"])
+            self._members[m.id] = m
+        for r in await pool.fetch("SELECT data FROM tenant_invites"):
+            i = TenantInvite.model_validate_json(r["data"])
+            self._invites[i.id] = i
+        for r in await pool.fetch("SELECT data FROM tenant_notif_prefs"):
+            n = NotifPrefs.model_validate_json(r["data"])
+            self._notif[n.tenant_id] = n
 
     # ── members ──────────────────────────────────────────────────────────
 
@@ -102,12 +122,14 @@ class TenantUserStore:
             invited_by=invited_by,
         )
         self._members[m.id] = m
+        self._save_member(m)
         return m
 
     def revoke_member(self, tenant_id: str, member_id: str) -> TenantMember | None:
         m = self._members.get(member_id)
         if m and m.tenant_id == tenant_id:
             self._members[member_id] = m.model_copy(update={"ativo": False})
+            self._save_member(self._members[member_id])
             return self._members[member_id]
         return None
 
@@ -115,6 +137,7 @@ class TenantUserStore:
         m = self._members.get(member_id)
         if m and m.tenant_id == tenant_id:
             self._members[member_id] = m.model_copy(update={"papel": papel})
+            self._save_member(self._members[member_id])
             return self._members[member_id]
         return None
 
@@ -143,6 +166,7 @@ class TenantUserStore:
             created_by=created_by,
         )
         self._invites[invite.id] = invite
+        self._save_invite(invite)
         return invite
 
     def get_invite_by_token(self, token: str) -> TenantInvite | None:
@@ -158,6 +182,7 @@ class TenantUserStore:
         self._invites[invite.id] = invite.model_copy(
             update={"accepted_at": datetime.now(UTC).isoformat()}
         )
+        self._save_invite(self._invites[invite.id])
         return self._invites[invite.id]
 
     # ── notif prefs ───────────────────────────────────────────────────────
@@ -169,4 +194,6 @@ class TenantUserStore:
         current = self.get_notif_prefs(tenant_id)
         updated = current.model_copy(update=kwargs)
         self._notif[tenant_id] = updated
+        if self._persister:
+            self._persister.upsert("tenant_notif_prefs", {"tenant_id": tenant_id}, updated.model_dump_json())
         return updated

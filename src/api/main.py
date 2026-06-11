@@ -7,11 +7,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.api.admin_audit_store import AdminAuditStore
-from src.api.alert_store import AlertStore
-from src.api.billing_store import BillingStore
-from src.api.contract_store import ContractStore
-from src.api.feature_flag_store import FeatureFlagStore
 from src.api.pncp_client import PNCPClient
 from src.api.routes.admin import router as admin_router
 from src.api.routes.alerts import router as alerts_router
@@ -43,10 +38,7 @@ from src.api.routes.sentinela import router as sentinela_router
 from src.api.routes.tenants import router as tenants_router
 from src.api.routes.watch import router as watch_router
 from src.api.store import RunStore
-from src.api.tenant_state_store import TenantStateStore
-from src.api.tenant_user_store import TenantUserStore
 from src.api.watch_agent import watch_poll_loop
-from src.api.watch_store import WatchStore
 from src.config import settings
 from src.graph.checkpoint import get_checkpointer
 from src.graph.supervisor import build_supervisor
@@ -56,32 +48,41 @@ from src.graph.supervisor import build_supervisor
 async def lifespan(app: FastAPI):
     checkpointer, close_checkpointer = await get_checkpointer()
     app.state.graph = build_supervisor(checkpointer=checkpointer)
-    app.state.store = RunStore()
-    app.state.contract_store = ContractStore()
-    app.state.alert_store = AlertStore()
-    app.state.billing_store = BillingStore()
-    app.state.tenant_user_store = TenantUserStore()
-    app.state.watch_store = WatchStore()
-    app.state.feature_flag_store = FeatureFlagStore()
-    app.state.admin_audit_store = AdminAuditStore()
-    app.state.tenant_state_store = TenantStateStore()
+    app.state.store = RunStore()  # runs: efêmero por design (checkpointer = fonte de verdade)
+
+    # Pool asyncpg compartilhado (PERSISTENCIA_STORES + MarketIntel)
+    import os as _os
+    _db_url = _os.environ.get("DATABASE_URL")
+    _pool = None
+    if _db_url:
+        import asyncpg
+        _pool = await asyncpg.create_pool(_db_url, min_size=1, max_size=5)
+    app.state.db_pool = _pool
+    app.state._mi_pool = _pool  # alias legado (ConsentMiddleware, robo, lgpd)
+
+    # Stores — AlloyDB quando há pool; in-memory caso contrário (dev/CI)
+    from src.api.store_factory import build_stores
+    stores = build_stores(_pool)
+    await stores.hydrate(_pool)
+    app.state.stores = stores
+    app.state.contract_store = stores.contracts
+    app.state.alert_store = stores.alerts
+    app.state.billing_store = stores.billing
+    app.state.tenant_user_store = stores.tenant_users
+    app.state.watch_store = stores.watch
+    app.state.feature_flag_store = stores.feature_flags
+    app.state.admin_audit_store = stores.admin_audit
+    app.state.tenant_state_store = stores.tenant_states
+
     pncp_client = PNCPClient()
     await pncp_client.__aenter__()
     app.state.pncp_client = pncp_client
 
-    # MarketIntelService — inicializa pool asyncpg se DATABASE_URL disponível
-    import os as _os
-    _db_url = _os.environ.get("DATABASE_URL")
-    if _db_url:
-        import asyncpg
-
+    if _pool is not None:
         from src.services.market_intel_service import MarketIntelService
-        _pool = await asyncpg.create_pool(_db_url, min_size=1, max_size=5)
         app.state.market_intel_service = MarketIntelService(_pool)
-        app.state._mi_pool = _pool
     else:
         app.state.market_intel_service = None
-        app.state._mi_pool = None
 
     # GCP secret bootstrap — only when running on GCP
     if settings.gcp_project_id:
@@ -99,6 +100,7 @@ async def lifespan(app: FastAPI):
     with contextlib.suppress(asyncio.CancelledError):
         await _poll_task
     await pncp_client.__aexit__(None, None, None)
+    await stores.aclose()
     if app.state._mi_pool:
         await app.state._mi_pool.close()
     await close_checkpointer()
